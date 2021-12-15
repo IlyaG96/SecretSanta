@@ -59,99 +59,110 @@ def chose_game_name(update, context):
 def chose_game_price(update, context):
 
     if update.message.text != 'Назад ⬅':
+        context.user_data['game_name'] = update.message.text
 
-        game_name = update.message.text
-        context.user_data['game_name'] = game_name
-        text = f"Для игры {game_name} будет ограничение по стоимости?"
-        keyboard = [
-            ['Без ограничения по стоимости'],
-            ['До 500 рублей'],
-            ['От 500 до 1000 рублей'],
-            ['От 1000 до 2000 рублей'],
-            ['Назад ⬅'],
-        ]
-        update.message.reply_text(
-            text,
-            reply_markup=ReplyKeyboardMarkup(
-                keyboard,
-                resize_keyboard=True,
-            )
+    game_name = context.user_data['game_name']
+    text = f"Для игры {game_name} будет ограничение по стоимости?"
+    keyboard = [
+        ['Без ограничения по стоимости'],
+        ['До 500 рублей'],
+        ['От 500 до 1000 рублей'],
+        ['От 1000 до 2000 рублей'],
+        ['Назад ⬅'],
+    ]
+    update.message.reply_text(
+        text,
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True,
         )
+    )
 
     return GAME_PRICE
+
+
+def chose_game_price_back(update, context):
+    return chose_game_price(update, context)
 
 
 def chose_game_reg_ends(update, context):
 
     if update.message.text != 'Назад ⬅':
-
         context.user_data['game_price'] = update.message.text
 
-        game_name = context.user_data['game_name']
+    game_name = context.user_data['game_name']
 
-        text = f'Последний день регистрации в игре {game_name} это:'
-        keyboard = [
-            ['25.12.2021'],
-            ['31.12.2021'],
-            ['Назад ⬅'],
-        ]
-        update.message.reply_text(
-            text,
-            reply_markup=ReplyKeyboardMarkup(
-                keyboard,
-                resize_keyboard=True,
-            )
+    text = f'Последний день регистрации в игре {game_name} это:'
+    keyboard = [
+        ['25.12.2021'],
+        ['31.12.2021'],
+        ['Назад ⬅'],
+    ]
+    update.message.reply_text(
+        text,
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True,
         )
+    )
 
     return GAME_REG_ENDS
+
+
+def chose_game_reg_ends_back(update, context):
+    return chose_game_reg_ends(update, context)
 
 
 def chose_game_gift_date(update, context):
 
     if update.message.text != 'Назад ⬅':
-
         context.user_data['game_reg_ends'] = update.message.text
-        keyboard = [['Назад ⬅']]
-        text = 'Введите день для отправки подарков в формате 29.12.2021:'
 
-        update.message.reply_text(
-            text,
-            reply_markup=ReplyKeyboardMarkup(
-                keyboard,
-                resize_keyboard=True,
-            )
+    keyboard = [['Назад ⬅']]
+    text = 'Введите день для отправки подарков в формате 29.12.2021:'
+
+    update.message.reply_text(
+        text,
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True,
         )
+    )
 
     return GAME_GIFT_DATE
 
 
-def game_confirmation(update, context):
-    if update.message.text != 'Назад ⬅':
+def chose_game_gift_date_back(update, context):
+    return chose_game_gift_date(update, context)
 
+
+def game_confirmation(update, context):
+
+    if update.message.text != 'Назад ⬅':
         context.user_data['game_gift_send'] = update.message.text
 
-        game_name = context.user_data['game_name']
-        game_price = context.user_data['game_price']
-        game_reg_ends = context.user_data['game_reg_ends']
-        game_gift_date = context.user_data['game_gift_send']
+    game_name = context.user_data['game_name']
+    game_price = context.user_data['game_price']
+    game_reg_ends = context.user_data['game_reg_ends']
+    game_gift_date = context.user_data['game_gift_send']
 
-        keyboard = [['Назад ⬅'], ['Подтвердить']]
+    keyboard = [['Назад ⬅'], ['Подтвердить']]
 
-        text = 'Подтвердите детали игры:\n' \
-               f'Название игры: {game_name} \n' \
-               f'Ограничение по стоимости: {game_price} \n' \
-               f'Последний день для регистрации: {game_reg_ends} \n' \
-               f'День для отправки подарков: {game_gift_date} \n'
+    text = 'Подтвердите детали игры:\n' \
+           f'Название игры: {game_name} \n' \
+           f'Ограничение по стоимости: {game_price} \n' \
+           f'Последний день для регистрации: {game_reg_ends} \n' \
+           f'День для отправки подарков: {game_gift_date} \n'
 
-        update.message.reply_text(
-            text,
-            reply_markup=ReplyKeyboardMarkup(
-                keyboard,
-                resize_keyboard=True,
-            )
+    update.message.reply_text(
+        text,
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True,
         )
+    )
 
-        return GAME_CONFIRMATION
+    return GAME_CONFIRMATION
 
 
 def send_game_url(update, context):
@@ -194,15 +205,15 @@ if __name__ == '__main__':
                 MessageHandler(Filters.text, chose_game_reg_ends)
             ],
             GAME_REG_ENDS: [
-                MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_price),
+                MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_price_back),
                 MessageHandler(Filters.text, chose_game_gift_date)
             ],
             GAME_GIFT_DATE: [
-                MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_reg_ends),
+                MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_reg_ends_back),
                 MessageHandler(Filters.text, game_confirmation)
             ],
             GAME_CONFIRMATION: [
-                MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_gift_date),
+                MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_gift_date_back),
                 MessageHandler(Filters.regex('^Подтвердить$'), send_game_url)
             ]
 
