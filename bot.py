@@ -28,7 +28,6 @@ IN_GAME = 'in-game'
 
 
 def start(update, context):
-
     text = 'Организуй тайный обмен подарками, запусти праздничное настроение!'
     keyboard = [
         ['Создать игру']
@@ -45,8 +44,7 @@ def start(update, context):
 
 
 def chose_game_name(update, context):
-
-    text = 'Введите название игры'
+    text = 'Введите название игры (не менее 7 латинских символов без цифр и пробелов)'
 
     update.message.reply_text(
         text,
@@ -57,7 +55,6 @@ def chose_game_name(update, context):
 
 
 def chose_game_price(update, context):
-
     if update.message.text != 'Назад ⬅':
         context.user_data['game_name'] = update.message.text
 
@@ -86,7 +83,6 @@ def chose_game_price_back(update, context):
 
 
 def chose_game_reg_ends(update, context):
-
     if update.message.text != 'Назад ⬅':
         context.user_data['game_price'] = update.message.text
 
@@ -114,7 +110,6 @@ def chose_game_reg_ends_back(update, context):
 
 
 def chose_game_gift_date(update, context):
-
     if update.message.text != 'Назад ⬅':
         context.user_data['game_reg_ends'] = update.message.text
 
@@ -137,7 +132,6 @@ def chose_game_gift_date_back(update, context):
 
 
 def game_confirmation(update, context):
-
     if update.message.text != 'Назад ⬅':
         context.user_data['game_gift_send'] = update.message.text
 
@@ -166,9 +160,9 @@ def game_confirmation(update, context):
 
 
 def send_game_url(update, context):
-
     bot = context.bot
-    game_id = 'params'
+    game_id = f"{context.user_data['game_name']}"
+    print(game_id)
     url = helpers.create_deep_linked_url(bot.username, game_id)
 
     text = f'Ссылка для участия в игре: {url}'
@@ -179,7 +173,6 @@ def send_game_url(update, context):
 
 
 if __name__ == '__main__':
-
     load_dotenv()
     TG_TOKEN = os.getenv('TG_TOKEN')
     updater = Updater(token=TG_TOKEN)
@@ -187,14 +180,13 @@ if __name__ == '__main__':
 
     conv_handler = ConversationHandler(
         entry_points=[
-            CommandHandler('start', start_santa_game, filters=Filters.regex('params')),
+            CommandHandler('start', start_santa_game, filters=Filters.regex('^.{7,99}$')),
             CommandHandler('start', start)
-            ],
+        ],
 
         states={
             SANTA_GAME: [
-                CommandHandler('start', start_santa_game,
-                               filters=Filters.regex('params')),
+                CommandHandler("start", start_santa_game, filters=Filters.regex('^.{7,20}$')),
                 MessageHandler(Filters.regex('^Создать игру$'), chose_game_name),
             ],
             GAME_NAME: [
@@ -220,7 +212,7 @@ if __name__ == '__main__':
         },
         fallbacks=[CommandHandler('start', start), MessageHandler(Filters.regex('^Начать$'), start)],
         per_user=True,
-        per_chat=True
+        per_chat=False
     )
     dispatcher.add_handler(conv_handler)
     updater.start_polling()
