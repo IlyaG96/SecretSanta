@@ -162,7 +162,6 @@ def game_confirmation(update, context):
 def send_game_url(update, context):
     bot = context.bot
     game_id = f"{context.user_data['game_name']}"
-    print(game_id)
     url = helpers.create_deep_linked_url(bot.username, game_id)
 
     text = f'Ссылка для участия в игре: {url}'
