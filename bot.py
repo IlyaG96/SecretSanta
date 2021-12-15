@@ -44,7 +44,7 @@ def start(update, context):
 
 
 def chose_game_name(update, context):
-    text = 'Введите название игры (не менее 7 латинских символов без цифр и пробелов)'
+    text = 'Введите название игры (не менее 8 латинских символов без цифр и пробелов)'
 
     update.message.reply_text(
         text,
@@ -148,6 +148,15 @@ def game_confirmation(update, context):
            f'Последний день для регистрации: {game_reg_ends} \n' \
            f'День для отправки подарков: {game_gift_date} \n'
 
+    user = update.message.from_user
+    first_name = user.first_name
+
+    with open(file=f"{game_name}.txt", mode="w") as file:
+        file.write(
+            f"{text}\n"
+            f"owner {first_name} ",
+        )
+
     update.message.reply_text(
         text,
         reply_markup=ReplyKeyboardMarkup(
@@ -180,7 +189,7 @@ if __name__ == '__main__':
     conv_handler = ConversationHandler(
         entry_points=[
             CommandHandler('start', start_santa_game, filters=Filters.regex('^.{7,99}$')),
-            CommandHandler('start', start)
+            CommandHandler('start', start),
         ],
 
         states={
@@ -211,7 +220,7 @@ if __name__ == '__main__':
         },
         fallbacks=[CommandHandler('start', start), MessageHandler(Filters.regex('^Начать$'), start)],
         per_user=True,
-        per_chat=False
+        per_chat=True
     )
     dispatcher.add_handler(conv_handler)
     updater.start_polling()
