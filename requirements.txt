@@ -1,2 +1,7 @@
-python-telegram-bot==13.9
-python-dotenv==0.19.2
+python-telegram-bot==13.7
+python-dotenv==0.19.0
+Django==3.2.7
+environs==9.3.3
+jsonfield==3.1.0
+
+
