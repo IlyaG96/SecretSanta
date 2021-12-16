@@ -129,6 +129,7 @@ def chose_game_gift_date_back(update, context):
 def game_confirmation(update, context):
     if update.message.text != 'Назад ⬅':
         context.user_data['game_gift_send'] = update.message.text
+        context.user_data['user_id'] = update.message.from_user.id
 
     game_name = context.user_data['game_name']
     game_price = context.user_data['game_price']
@@ -143,8 +144,7 @@ def game_confirmation(update, context):
            f'Последний день для регистрации: {game_reg_ends} \n' \
            f'День для отправки подарков: {game_gift_date} \n'
 
-    user = update.message.from_user
-    first_name = user.first_name
+    user_id = context.user_data['user_id']
 
     data = {"game_details":
         {
@@ -153,7 +153,7 @@ def game_confirmation(update, context):
             "game_reg_ends": game_reg_ends,
             "game_gift_date": game_gift_date
         },
-        "game_owner": first_name,
+        "game_owner": user_id,
 
         "game_participants": {
             "Семен": {"pair": None, "wish": None, "mail": None, "letter": None},
@@ -226,6 +226,7 @@ if __name__ == '__main__':
                 MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_gift_date_back),
                 MessageHandler(Filters.regex('^Подтвердить$'), send_game_url)
             ],
+
             # collect guest information branch
             GUEST_COLLECT_NAME: [
                 MessageHandler(Filters.regex('^Ура! Сейчас я расскажу, что хочу получить на Новый Год!$'),
@@ -248,13 +249,11 @@ if __name__ == '__main__':
                 MessageHandler(Filters.text, collect_guest_end)
             ],
 
-
             # admin branch
             ADMIN_GAME_VIEW: [
                 MessageHandler(Filters.regex('^Список участников$'), admin_participants),
                 MessageHandler(Filters.regex('^Ввести данные для участия в игре$'), collect_guest_name)
             ]
-
         },
         fallbacks=[CommandHandler('start', start), MessageHandler(Filters.regex('^Начать$'), start)],
         per_user=False,

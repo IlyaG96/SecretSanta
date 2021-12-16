@@ -11,14 +11,14 @@ def start_santa_game(update, context):
 
     game_name = context.args[0]
     context.user_data['game_name'] = game_name
-    user = update.message.from_user
-    first_name = user.first_name
+    context.user_data['user_id'] = update.message.from_user.id
+    user_id = context.user_data['user_id']
 
     with open(file=f'{game_name}.json', mode='r') as file:
         game = json.load(file)
         game_owner = game['game_owner']
 
-    if first_name == game_owner:
+    if user_id == game_owner:
         keyboard = [
             ['Информация об игре'],
             ['Список участников'],
