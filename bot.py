@@ -6,10 +6,10 @@ from dotenv import load_dotenv
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, Filters, ConversationHandler, MessageHandler
 from telegram.utils import helpers
-from santa_game import start_santa_game, collect_guest_name, collect_guest_wish, collect_guest_mail,\
-    collect_guest_letter, collect_guest_end, collect_guest_name_back, admin_participants, \
-    collect_guest_wish, GUEST_COLLECT_PD, GUEST_COLLECT_WISH, GUEST_COLLECT_MAIL, GUEST_COLLECT_LETTER,\
-    GUEST_COLLECT_END, ADMIN_GAME_VIEW, ADMIN_PARTICIPANTS
+from santa_game import start_santa_game, collect_guest_name, collect_guest_name_back, collect_guest_mail, \
+    collect_guest_mail_back, collect_guest_letter, collect_guest_letter_back,  collect_guest_end, admin_participants, \
+    collect_guest_wish, collect_guest_wish_back, GUEST_COLLECT_NAME, GUEST_COLLECT_WISH, GUEST_COLLECT_MAIL,\
+    GUEST_COLLECT_LETTER, GUEST_COLLECT_END, ADMIN_GAME_VIEW, ADMIN_PARTICIPANTS
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -227,29 +227,25 @@ if __name__ == '__main__':
                 MessageHandler(Filters.regex('^Подтвердить$'), send_game_url)
             ],
             # collect guest information branch
-            GUEST_COLLECT_PD: [
+            GUEST_COLLECT_NAME: [
                 MessageHandler(Filters.regex('^Ура! Сейчас я расскажу, что хочу получить на Новый Год!$'),
                                collect_guest_name)
             ],
             GUEST_COLLECT_WISH: [
                 MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_name_back),
-                MessageHandler(Filters.text,
-                               collect_guest_wish)
+                MessageHandler(Filters.text, collect_guest_wish)
             ],
             GUEST_COLLECT_MAIL: [
-                MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_name_back),
-                MessageHandler(Filters.text,
-                               collect_guest_mail)
+                MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_wish_back),
+                MessageHandler(Filters.text, collect_guest_mail)
             ],
             GUEST_COLLECT_LETTER: [
-                MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_name_back),
-                MessageHandler(Filters.text,
-                               collect_guest_letter)
+                MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_mail_back),
+                MessageHandler(Filters.text, collect_guest_letter)
             ],
             GUEST_COLLECT_END: [
-                MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_name_back),
-                MessageHandler(Filters.text,
-                               collect_guest_end)
+                MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_letter_back),
+                MessageHandler(Filters.text, collect_guest_end)
             ],
 
 

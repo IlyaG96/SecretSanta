@@ -4,7 +4,7 @@ from telegram.utils import helpers
 
 
 ADMIN_GAME_VIEW, ADMIN_PARTICIPANTS = range(10, 12)
-GUEST_COLLECT_PD, GUEST_COLLECT_WISH, GUEST_COLLECT_MAIL, GUEST_COLLECT_LETTER, GUEST_COLLECT_END = range(20, 25)
+GUEST_COLLECT_NAME, GUEST_COLLECT_WISH, GUEST_COLLECT_MAIL, GUEST_COLLECT_LETTER, GUEST_COLLECT_END = range(20, 25)
 
 
 def start_santa_game(update, context):
@@ -54,7 +54,7 @@ def start_santa_game(update, context):
             )
         )
 
-        return GUEST_COLLECT_PD
+        return GUEST_COLLECT_NAME
 
 
 def collect_guest_name(update, context):
@@ -84,6 +84,10 @@ def collect_guest_name_back(update, context):
 def collect_guest_wish(update, context):
     user = update.message.from_user
 
+    keyboard = [
+        ['Назад ⬅']
+    ]
+
     if update.message.text != 'Назад ⬅':
         first_name = user.first_name
         game_name = context.user_data['game_name']
@@ -101,16 +105,25 @@ def collect_guest_wish(update, context):
 
     update.message.reply_text(
         f'Теперь твое желание!',
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True
+        )
     )
 
     return GUEST_COLLECT_MAIL
+
+
+def collect_guest_wish_back(update, context):
+    return collect_guest_wish(update, context)
 
 
 def collect_guest_mail(update, context):
     user = update.message.from_user
     first_name = user.first_name
     game_name = context.user_data['game_name']
+
+    keyboard = [['Назад ⬅']]
 
     if update.message.text != 'Назад ⬅':
 
@@ -125,16 +138,23 @@ def collect_guest_mail(update, context):
 
     update.message.reply_text(
         f'Введи, пожалуйста, свою электронную почту!',
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True)
     )
 
     return GUEST_COLLECT_LETTER
+
+
+def collect_guest_mail_back(update, context):
+    return collect_guest_mail(update, context)
 
 
 def collect_guest_letter(update, context):
     user = update.message.from_user
     first_name = user.first_name
     game_name = context.user_data['game_name']
+    keyboard = [['Назад ⬅']]
 
     if update.message.text != 'Назад ⬅':
 
@@ -149,10 +169,16 @@ def collect_guest_letter(update, context):
 
     update.message.reply_text(
         f'Как насчет коротенького послания Санте?',
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True)
     )
 
     return GUEST_COLLECT_END
+
+
+def collect_guest_letter_back(update, context):
+    return collect_guest_letter(update, context)
 
 
 def collect_guest_end(update, context):
