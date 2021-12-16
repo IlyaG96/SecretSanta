@@ -4,18 +4,19 @@ from telegram.utils import helpers
 
 
 ADMIN_GAME_VIEW, ADMIN_PARTICIPANTS = range(10, 12)
-GUEST_COLLECT_PD, GUEST_COLLECT_WISH = range(20, 22)
+GUEST_COLLECT_PD, GUEST_COLLECT_WISH, GUEST_COLLECT_MAIL, GUEST_COLLECT_LETTER, GUEST_COLLECT_END = range(20, 25)
 
 
 def start_santa_game(update, context):
+
     game_name = context.args[0]
     context.user_data['game_name'] = game_name
     user = update.message.from_user
     first_name = user.first_name
 
     with open(file=f'{game_name}.json', mode='r') as file:
-        text = json.load(file)
-        game_owner = text['game_owner']
+        game = json.load(file)
+        game_owner = game['game_owner']
 
     if first_name == game_owner:
         keyboard = [
@@ -34,11 +35,19 @@ def start_santa_game(update, context):
 
     else:
         keyboard = [
-            ['Рассказать Санте о себе']
+            ['Ура! Сейчас я расскажу, что хочу получить на Новый Год!']
         ]
+
+        with open(file=f'{game_name}.json', mode='r') as file:
+            game = json.load(file)
+            game_details = game["game_details"]
+
         update.message.reply_text(
-            f'Привет! {game_owner} приглашает тебя поучаствовать в игре {game_name}:\n'
-            f'Расскажи Санте о себе, как тебя зовут и что бы ты хотел получить на Новый Год',
+            f'Привет! {game_owner} приглашает тебя поучаствовать в игре Тайный Санта!\n'
+            f'Название игры: {game_name}\n'
+            f'Подарки должны стоить: {game_details["game_price"]}\n'
+            f'Последний день для регистрации: {game_details["game_reg_ends"]}\n'
+            f'А подарочки отправим вот когда: {game_details["game_gift_date"]}\n',
             reply_markup=ReplyKeyboardMarkup(
                 keyboard,
                 resize_keyboard=True,
@@ -51,15 +60,15 @@ def start_santa_game(update, context):
 def collect_guest_name(update, context):
     user = update.message.from_user
     first_name = user.first_name
-    last_name = user.first_name
     keyboard = [
-        ['Ввести полное ФИО'],
-        ['Подтвердить']
+        ['Ввести полное ФИО (в разаработке)'],
+        ['Подтвердить'],
+        ['Назад ⬅']
     ]
     update.message.reply_text(
-        f'Фамилия и имя, взятые из твоего профиля'
-        f'{first_name}'
-        f'{last_name}',
+        f'Отлично. Для начала, давай познакомимся\n'
+        f'Имя, взятое из твоего профиля\n'
+        f'Имя: {first_name}\n',
         reply_markup=ReplyKeyboardMarkup(
             keyboard,
             resize_keyboard=True,
@@ -68,26 +77,114 @@ def collect_guest_name(update, context):
     return GUEST_COLLECT_WISH
 
 
+def collect_guest_name_back(update, context):
+    return collect_guest_name(update, context)
+
+
 def collect_guest_wish(update, context):
     user = update.message.from_user
 
     if update.message.text != 'Назад ⬅':
         first_name = user.first_name
-        last_name = user.first_name
         game_name = context.user_data['game_name']
-        with open(file=f'{game_name}.json', mode='a') as file:
-            file.write(f'В игре: {first_name}, {last_name}')
+
+        with open(file=f'{game_name}.json', mode='r') as file:
+            game = json.load(file)
+
+            game["game_participants"].update(
+                {first_name: {"pair": None, "wish": None, "mail": None, "letter": None}}
+            )
+
+        with open(file=f'{game_name}.json', mode='w') as file:
+            json.dump(game, file, ensure_ascii=False)
 
 
-def collect_guest_name_back(update, context):
-    return collect_guest_name(update, context)
+    update.message.reply_text(
+        f'Теперь твое желание!',
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+    return GUEST_COLLECT_MAIL
+
+
+def collect_guest_mail(update, context):
+    user = update.message.from_user
+    first_name = user.first_name
+    game_name = context.user_data['game_name']
+
+    if update.message.text != 'Назад ⬅':
+
+        wish = update.message.text
+
+        with open(file=f'{game_name}.json', mode='r') as file:
+            game = json.load(file)
+            game["game_participants"][first_name]["wish"] = wish
+
+        with open(file=f'{game_name}.json', mode='w') as file:
+            json.dump(game, file, ensure_ascii=False)
+
+    update.message.reply_text(
+        f'Введи, пожалуйста, свою электронную почту!',
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+    return GUEST_COLLECT_LETTER
+
+
+def collect_guest_letter(update, context):
+    user = update.message.from_user
+    first_name = user.first_name
+    game_name = context.user_data['game_name']
+
+    if update.message.text != 'Назад ⬅':
+
+        mail = update.message.text
+
+        with open(file=f'{game_name}.json', mode='r') as file:
+            game = json.load(file)
+            game["game_participants"][first_name]["mail"] = mail
+
+        with open(file=f'{game_name}.json', mode='w') as file:
+            json.dump(game, file, ensure_ascii=False)
+
+    update.message.reply_text(
+        f'Как насчет коротенького послания Санте?',
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+    return GUEST_COLLECT_END
+
+
+def collect_guest_end(update, context):
+    user = update.message.from_user
+    first_name = user.first_name
+    game_name = context.user_data['game_name']
+
+    if update.message.text != 'Назад ⬅':
+
+        letter = update.message.text
+
+        with open(file=f'{game_name}.json', mode='r') as file:
+            game = json.load(file)
+            game["game_participants"][first_name]["letter"] = letter
+
+        with open(file=f'{game_name}.json', mode='w') as file:
+            json.dump(game, file, ensure_ascii=False)
+
+    update.message.reply_text(
+        f'Поздравляю! Ты в игре. В назначенный день жди своего письма!',
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+    return GUEST_COLLECT_END
 
 
 def admin_participants(update, context):
     bot = context.bot
     game_name = context.user_data['game_name']
+    url = helpers.create_deep_linked_url(bot.username, game_name)
+
     with open(file=f'{game_name}.json', mode='r') as file:
-        url = helpers.create_deep_linked_url(bot.username, game_name)
         text = json.load(file)
         game_participants = text.get("game_participants")
         if not game_participants:
@@ -116,5 +213,4 @@ def admin_participants(update, context):
                     resize_keyboard=True
                 )
             )
-
 

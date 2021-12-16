@@ -1,16 +1,1 @@
-{"game_details":
-{
-  "Название игры": "santasatana",
-  "Ограничение по стоимости": "От 1000 до 2000 рублей",
-  "Последний день для регистрации": "31.12.2021",
-  "День для отправки подарков": "123124"
-},
-  "game_owner": "Илья Габдрахманов",
-
-  "game_participants": {
-    "Семен": {},
-    "Илья": {},
-    "Катерина": {},
-    "Лилия": {}
-  }
-}
+{"game_details": {"game_name": "santasatana", "game_price": "От 1000 до 2000 рублей", "game_reg_ends": "31.12.2021", "game_gift_date": "123123"}, "game_owner": "Илья Габдрахманов", "game_participants": {"Семен": {"pair": null, "wish": null, "mail": null, "letter": null}, "Илья": {"pair": null, "wish": null, "mail": null, "letter": null}, "Катерина": {"pair": null, "wish": null, "mail": null, "letter": null}, "Лилия": {"pair": null, "wish": null, "mail": null, "letter": null}, "Radmila": {"pair": null, "wish": "Котейка", "mail": "прролл", "letter": "Ке"}}}

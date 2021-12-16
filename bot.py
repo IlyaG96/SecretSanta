@@ -6,8 +6,10 @@ from dotenv import load_dotenv
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, Filters, ConversationHandler, MessageHandler
 from telegram.utils import helpers
-from santa_game import start_santa_game, collect_guest_name, collect_guest_name_back, admin_participants, \
-    GUEST_COLLECT_PD, GUEST_COLLECT_WISH, ADMIN_GAME_VIEW, ADMIN_PARTICIPANTS
+from santa_game import start_santa_game, collect_guest_name, collect_guest_wish, collect_guest_mail,\
+    collect_guest_letter, collect_guest_end, collect_guest_name_back, admin_participants, \
+    collect_guest_wish, GUEST_COLLECT_PD, GUEST_COLLECT_WISH, GUEST_COLLECT_MAIL, GUEST_COLLECT_LETTER,\
+    GUEST_COLLECT_END, ADMIN_GAME_VIEW, ADMIN_PARTICIPANTS
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -146,18 +148,18 @@ def game_confirmation(update, context):
 
     data = {"game_details":
         {
-            "Название игры": game_name,
-            "Ограничение по стоимости": game_price,
-            "Последний день для регистрации": game_reg_ends,
-            "День для отправки подарков": game_gift_date
+            "game_name": game_name,
+            "game_price": game_price,
+            "game_reg_ends": game_reg_ends,
+            "game_gift_date": game_gift_date
         },
         "game_owner": first_name,
 
         "game_participants": {
-            "Семен": {},
-            "Илья": {},
-            "Катерина": {},
-            "Лилия": {}
+            "Семен": {"pair": None, "wish": None, "mail": None, "letter": None},
+            "Илья": {"pair": None, "wish": None, "mail": None, "letter": None},
+            "Катерина": {"pair": None, "wish": None, "mail": None, "letter": None},
+            "Лилия": {"pair": None, "wish": None, "mail": None, "letter": None}
         }
     }
 
@@ -226,19 +228,39 @@ if __name__ == '__main__':
             ],
             # collect guest information branch
             GUEST_COLLECT_PD: [
-                MessageHandler(Filters.regex('^Рассказать Санте о себе$'), collect_guest_name),
-                MessageHandler(Filters.regex('^Ввести данные для участия в игре$'), collect_guest_name)
+                MessageHandler(Filters.regex('^Ура! Сейчас я расскажу, что хочу получить на Новый Год!$'),
+                               collect_guest_name)
             ],
             GUEST_COLLECT_WISH: [
-                MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_name_back)
+                MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_name_back),
+                MessageHandler(Filters.text,
+                               collect_guest_wish)
             ],
+            GUEST_COLLECT_MAIL: [
+                MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_name_back),
+                MessageHandler(Filters.text,
+                               collect_guest_mail)
+            ],
+            GUEST_COLLECT_LETTER: [
+                MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_name_back),
+                MessageHandler(Filters.text,
+                               collect_guest_letter)
+            ],
+            GUEST_COLLECT_END: [
+                MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_name_back),
+                MessageHandler(Filters.text,
+                               collect_guest_end)
+            ],
+
+
+            # admin branch
             ADMIN_GAME_VIEW: [
                 MessageHandler(Filters.regex('^Список участников$'), admin_participants)
             ]
 
         },
         fallbacks=[CommandHandler('start', start), MessageHandler(Filters.regex('^Начать$'), start)],
-        per_user=True,
+        per_user=False,
         per_chat=True
     )
     dispatcher.add_handler(conv_handler)
