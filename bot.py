@@ -251,7 +251,8 @@ if __name__ == '__main__':
 
             # admin branch
             ADMIN_GAME_VIEW: [
-                MessageHandler(Filters.regex('^Список участников$'), admin_participants)
+                MessageHandler(Filters.regex('^Список участников$'), admin_participants),
+                MessageHandler(Filters.regex('^Ввести данные для участия в игре$'), collect_guest_name)
             ]
 
         },
