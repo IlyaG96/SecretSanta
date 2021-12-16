@@ -146,24 +146,24 @@ def game_confirmation(update, context):
 
     user_id = context.user_data['user_id']
 
-    data = {"game_details":
+    data = {'game_details':
         {
-            "game_name": game_name,
-            "game_price": game_price,
-            "game_reg_ends": game_reg_ends,
-            "game_gift_date": game_gift_date
+            'game_name': game_name,
+            'game_price': game_price,
+            'game_reg_ends': game_reg_ends,
+            'game_gift_date': game_gift_date
         },
-        "game_owner": user_id,
+        'game_owner': user_id,
 
-        "game_participants": {
-            "Семен": {"pair": None, "wish": None, "mail": None, "letter": None},
-            "Илья": {"pair": None, "wish": None, "mail": None, "letter": None},
-            "Катерина": {"pair": None, "wish": None, "mail": None, "letter": None},
-            "Лилия": {"pair": None, "wish": None, "mail": None, "letter": None}
+        'game_participants': {
+            'Семен': {'pair': None, 'wish': None, 'mail': None, 'letter': None},
+            'Илья': {'pair': None, 'wish': None, 'mail': None, 'letter': None},
+            'Катерина': {'pair': None, 'wish': None, 'mail': None, 'letter': None},
+            'Лилия': {'pair': None, 'wish': None, 'mail': None, 'letter': None}
         }
     }
 
-    with open(file=f"{game_name}.json", mode="w") as file:
+    with open(file=f'{game_name}.json', mode='w') as file:
         json.dump(data, file, ensure_ascii=False)
 
     update.message.reply_text(
@@ -179,7 +179,7 @@ def game_confirmation(update, context):
 
 def send_game_url(update, context):
     bot = context.bot
-    game_id = f"{context.user_data['game_name']}"
+    game_id = f'{context.user_data["game_name"]}'
     url = helpers.create_deep_linked_url(bot.username, game_id)
 
     text = f'Ссылка для участия в игре: {url}'

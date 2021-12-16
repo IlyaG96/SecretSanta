@@ -25,7 +25,7 @@ def start_santa_game(update, context):
             ['Ввести данные для участия в игре']
         ]
         update.message.reply_text(
-            f'Похоже, что Вы - создатель игры: {game_name}',
+            f'Похоже, что Вы - создатель игры {game_name}',
             reply_markup=ReplyKeyboardMarkup(
                 keyboard,
                 resize_keyboard=True,
@@ -40,14 +40,14 @@ def start_santa_game(update, context):
 
         with open(file=f'{game_name}.json', mode='r') as file:
             game = json.load(file)
-            game_details = game["game_details"]
+            game_details = game['game_details']
 
         update.message.reply_text(
             f'Привет! {game_owner} приглашает тебя поучаствовать в игре Тайный Санта!\n'
             f'Название игры: {game_name}\n'
             f'Подарки должны стоить: {game_details["game_price"]}\n'
             f'Последний день для регистрации: {game_details["game_reg_ends"]}\n'
-            f'А подарочки отправим вот когда: {game_details["game_gift_date"]}\n',
+            f'А подарочки вручим вот когда: {game_details["game_gift_date"]}\n',
             reply_markup=ReplyKeyboardMarkup(
                 keyboard,
                 resize_keyboard=True,
@@ -95,13 +95,12 @@ def collect_guest_wish(update, context):
         with open(file=f'{game_name}.json', mode='r') as file:
             game = json.load(file)
 
-            game["game_participants"].update(
-                {first_name: {"pair": None, "wish": None, "mail": None, "letter": None}}
+            game['game_participants'].update(
+                {first_name: {'pair': None, 'wish': None, 'mail': None, '"letter': None}}
             )
 
         with open(file=f'{game_name}.json', mode='w') as file:
             json.dump(game, file, ensure_ascii=False)
-
 
     update.message.reply_text(
         f'Теперь твое желание!',
@@ -131,7 +130,7 @@ def collect_guest_mail(update, context):
 
         with open(file=f'{game_name}.json', mode='r') as file:
             game = json.load(file)
-            game["game_participants"][first_name]["wish"] = wish
+            game['game_participants'][first_name]['wish'] = wish
 
         with open(file=f'{game_name}.json', mode='w') as file:
             json.dump(game, file, ensure_ascii=False)
@@ -162,7 +161,7 @@ def collect_guest_letter(update, context):
 
         with open(file=f'{game_name}.json', mode='r') as file:
             game = json.load(file)
-            game["game_participants"][first_name]["mail"] = mail
+            game['game_participants'][first_name]['mail'] = mail
 
         with open(file=f'{game_name}.json', mode='w') as file:
             json.dump(game, file, ensure_ascii=False)
@@ -192,7 +191,7 @@ def collect_guest_end(update, context):
 
         with open(file=f'{game_name}.json', mode='r') as file:
             game = json.load(file)
-            game["game_participants"][first_name]["letter"] = letter
+            game['game_participants'][first_name]['letter'] = letter
 
         with open(file=f'{game_name}.json', mode='w') as file:
             json.dump(game, file, ensure_ascii=False)
@@ -212,7 +211,7 @@ def admin_participants(update, context):
 
     with open(file=f'{game_name}.json', mode='r') as file:
         text = json.load(file)
-        game_participants = text.get("game_participants")
+        game_participants = text.get('game_participants')
         if not game_participants:
             update.message.reply_text(
                 f'Похоже, в игре пока никто не участвует :(\n'
