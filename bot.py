@@ -1,20 +1,13 @@
 import logging
 import os
-import time
+import json
 
 from dotenv import load_dotenv
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
-from telegram.ext import (
-    Updater,
-    CommandHandler,
-    Filters,
-    ConversationHandler,
-    MessageHandler
-)
-
+from telegram.ext import Updater, CommandHandler, Filters, ConversationHandler, MessageHandler
 from telegram.utils import helpers
-
-from santa_game import start_santa_game
+from santa_game import start_santa_game, collect_guest_name, collect_guest_name_back, admin_participants, \
+    GUEST_COLLECT_PD, GUEST_COLLECT_WISH, ADMIN_GAME_VIEW, ADMIN_PARTICIPANTS
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -151,11 +144,25 @@ def game_confirmation(update, context):
     user = update.message.from_user
     first_name = user.first_name
 
-    with open(file=f"{game_name}.txt", mode="w") as file:
-        file.write(
-            f"{text}\n"
-            f"owner {first_name} ",
-        )
+    data = {"game_details":
+        {
+            "Название игры": game_name,
+            "Ограничение по стоимости": game_price,
+            "Последний день для регистрации": game_reg_ends,
+            "День для отправки подарков": game_gift_date
+        },
+        "game_owner": first_name,
+
+        "game_participants": {
+            "Семен": {},
+            "Илья": {},
+            "Катерина": {},
+            "Лилия": {}
+        }
+    }
+
+    with open(file=f"{game_name}.json", mode="w") as file:
+        json.dump(data, file, ensure_ascii=False)
 
     update.message.reply_text(
         text,
@@ -197,6 +204,7 @@ if __name__ == '__main__':
                 CommandHandler("start", start_santa_game, filters=Filters.regex('^.{7,20}$')),
                 MessageHandler(Filters.regex('^Создать игру$'), chose_game_name),
             ],
+            # build game branch
             GAME_NAME: [
                 MessageHandler(Filters.text, chose_game_price)
             ],
@@ -215,6 +223,17 @@ if __name__ == '__main__':
             GAME_CONFIRMATION: [
                 MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_gift_date_back),
                 MessageHandler(Filters.regex('^Подтвердить$'), send_game_url)
+            ],
+            # collect guest information branch
+            GUEST_COLLECT_PD: [
+                MessageHandler(Filters.regex('^Рассказать Санте о себе$'), collect_guest_name),
+                MessageHandler(Filters.regex('^Ввести данные для участия в игре$'), collect_guest_name)
+            ],
+            GUEST_COLLECT_WISH: [
+                MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_name_back)
+            ],
+            ADMIN_GAME_VIEW: [
+                MessageHandler(Filters.regex('^Список участников$'), admin_participants)
             ]
 
         },
