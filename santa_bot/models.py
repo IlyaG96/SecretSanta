@@ -30,11 +30,11 @@ class Game(models.Model):
     name = models.CharField(max_length = 256)
 
     price_limit_status = models.BooleanField(default=False,
-        verbose_name='Нравится'
+        verbose_name='Есть лимит'
     )
-    price_limit = models.CharField(max_length = 256)
-    registration_date = models.DateTimeField()
-    gift_dispatch_date = models.DateTimeField()
+    price_limit = models.CharField(max_length = 256, default = 'Золотая карта')
+    registration_date = models.DateField()
+    gift_dispatch_date = models.DateField()
     class Meta:
         verbose_name = 'Игра'
         verbose_name_plural = 'Игры'

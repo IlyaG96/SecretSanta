@@ -1,28 +1,46 @@
-import logging
-import os
-import time
+# @SecretSanta_bot
+from environs import Env
 
-from dotenv import load_dotenv
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from django.core.management.base import BaseCommand
+from django.db.models import F
+from santa_bot.models import Profile, Game
+
+import logging
+from datetime import datetime, timedelta
+
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update, KeyboardButton
 from telegram.ext import (
     Updater,
     CommandHandler,
+    MessageHandler,
     Filters,
     ConversationHandler,
-    MessageHandler
+    CallbackContext,
 )
 
-from telegram.utils import helpers
+from .santa_game import start_santa_game
 
-from santa_game import start_santa_game
+env = Env()
+env.read_env()
 
+telegram_token = env.str('TG_TOKEN')
+
+
+# Enable logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
 )
 
 logger = logging.getLogger(__name__)
 
-GAME_NAME, GAME_PRICE, GAME_REG_ENDS, GAME_BUILD, GAME_GIFT_DATE, GAME_CONFIRMATION = range(6)
+(
+    GAME_NAME,
+    GAME_PRICE,
+    GAME_REG_ENDS,
+    GAME_BUILD,
+    GAME_GIFT_DATE,
+    GAME_CONFIRMATION,
+) = range(6)
 SANTA_GAME = 'share-link-with-game-id'
 IN_GAME = 'in-game'
 
@@ -90,8 +108,8 @@ def chose_game_reg_ends(update, context):
 
     text = f'Последний день регистрации в игре {game_name} это:'
     keyboard = [
-        ['25.12.2021'],
-        ['31.12.2021'],
+        ['2021-12-25'],
+        ['2021-12-31'],
         ['Назад ⬅'],
     ]
     update.message.reply_text(
@@ -114,7 +132,7 @@ def chose_game_gift_date(update, context):
         context.user_data['game_reg_ends'] = update.message.text
 
     keyboard = [['Назад ⬅']]
-    text = 'Введите день для отправки подарков в формате 29.12.2021:'
+    text = 'Введите день для отправки подарков в формате 2021-12-29:'
 
     update.message.reply_text(
         text,
@@ -147,7 +165,19 @@ def game_confirmation(update, context):
            f'Ограничение по стоимости: {game_price} \n' \
            f'Последний день для регистрации: {game_reg_ends} \n' \
            f'День для отправки подарков: {game_gift_date} \n'
-
+    chat_id = update.message.chat_id
+    participant, _ = Profile.objects.get_or_create(external_id=chat_id)
+    if context.user_data['game_price'] == 'Без ограничения по стоимости':
+        price_limit_status = True
+    game = Game.objects.create(
+        profile=participant,
+        name=context.user_data['game_name'],
+        price_limit_status=price_limit_status,
+        price_limit=context.user_data['game_price'],
+        registration_date=context.user_data['game_reg_ends'],
+        gift_dispatch_date=context.user_data['game_gift_send'],
+    )
+    game.save
     update.message.reply_text(
         text,
         reply_markup=ReplyKeyboardMarkup(
@@ -171,48 +201,56 @@ def send_game_url(update, context):
     )
 
 
-if __name__ == '__main__':
-    load_dotenv()
-    TG_TOKEN = os.getenv('TG_TOKEN')
-    updater = Updater(token=TG_TOKEN)
-    dispatcher = updater.dispatcher
+class Command(BaseCommand):
+    help = 'Телеграм-бот'
 
-    conv_handler = ConversationHandler(
-        entry_points=[
-            CommandHandler('start', start_santa_game, filters=Filters.regex('^.{7,99}$')),
-            CommandHandler('start', start)
-        ],
+    def handle(self, *args, **options):
+        # Create the Updater and pass it your bot's token.
+        updater = Updater(telegram_token)
 
-        states={
-            SANTA_GAME: [
-                CommandHandler("start", start_santa_game, filters=Filters.regex('^.{7,20}$')),
-                MessageHandler(Filters.regex('^Создать игру$'), chose_game_name),
-            ],
-            GAME_NAME: [
-                MessageHandler(Filters.text, chose_game_price)
-            ],
-            GAME_PRICE: [
-                MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_name),
-                MessageHandler(Filters.text, chose_game_reg_ends)
-            ],
-            GAME_REG_ENDS: [
-                MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_price_back),
-                MessageHandler(Filters.text, chose_game_gift_date)
-            ],
-            GAME_GIFT_DATE: [
-                MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_reg_ends_back),
-                MessageHandler(Filters.text, game_confirmation)
-            ],
-            GAME_CONFIRMATION: [
-                MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_gift_date_back),
-                MessageHandler(Filters.regex('^Подтвердить$'), send_game_url)
-            ]
+        # Get the dispatcher to register handlers
+        dispatcher = updater.dispatcher
 
-        },
-        fallbacks=[CommandHandler('start', start), MessageHandler(Filters.regex('^Начать$'), start)],
-        per_user=True,
-        per_chat=False
-    )
-    dispatcher.add_handler(conv_handler)
-    updater.start_polling()
-    updater.idle()
+        # Add conversation handler with the states CHOICE, TITLE, PHOTO, CONTACT, LOCATION
+        conv_handler = ConversationHandler(
+            entry_points=[CommandHandler('start', start)],
+            states={
+                SANTA_GAME: [
+                    CommandHandler("start", start_santa_game, filters=Filters.regex('^.{7,20}$')),
+                    MessageHandler(Filters.regex('^Создать игру$'), chose_game_name),
+                ],
+                GAME_NAME: [
+                    MessageHandler(Filters.text, chose_game_price)
+                ],
+                GAME_PRICE: [
+                    MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_name),
+                    MessageHandler(Filters.text, chose_game_reg_ends)
+                ],
+                GAME_REG_ENDS: [
+                    MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_price_back),
+                    MessageHandler(Filters.text, chose_game_gift_date)
+                ],
+                GAME_GIFT_DATE: [
+                    MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_reg_ends_back),
+                    MessageHandler(Filters.text, game_confirmation)
+                ],
+                GAME_CONFIRMATION: [
+                    MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_gift_date_back),
+                    MessageHandler(Filters.regex('^Подтвердить$'), send_game_url)
+                ]
+            },
+            fallbacks=[CommandHandler('start', start),
+                       MessageHandler(Filters.regex('^Начать$'), start)],
+            allow_reentry=True,
+        )
+
+        dispatcher.add_handler(conv_handler)
+        #dispatcher.add_error_handler(error)
+
+        # Start the Bot
+        updater.start_polling()
+
+        # Run the bot until you press Ctrl-C or the process receives SIGINT,
+        # SIGTERM or SIGABRT. This should be used most of the time, since
+        # start_polling() is non-blocking and will stop the bot gracefully.
+        updater.idle()
