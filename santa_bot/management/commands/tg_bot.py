@@ -208,14 +208,15 @@ def start_santa_game(update, context):
 
     game_name = context.args[0]
     context.user_data['game_name'] = game_name
-    context.user_data['user_id'] = update.message.from_user.id
-    user_id = context.user_data['user_id']
+    context.user_data['user_id'] = update.message.chat_id
+    chat_id = context.user_data['chat_id']
+
 
     with open(file=f'{game_name}.json', mode='r') as file:
         game = json.load(file)
-        game_owner = game['game_owner']
+        game_owner = game['game_owner']  # by chat_id
 
-    if user_id == game_owner:
+    if chat_id == game_owner:
         keyboard = [
             ['Информация об игре'],
             ['Список участников'],
@@ -355,8 +356,8 @@ def collect_guest_end(update, context):
         letter = update.message.text
         context.user_data['letter'] = letter
 
-    user_id = context.user_data['user_id']
-    name = context.user_data['name']
+    chat_id = context.user_data['chat_id']  # value for db
+    name = context.user_data['first_name']
     wish = context.user_data['wish']
     mail = context.user_data['mail']
     letter = context.user_data['letter']
