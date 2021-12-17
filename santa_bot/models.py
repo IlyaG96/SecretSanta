@@ -33,6 +33,7 @@ class Game(models.Model):
         verbose_name='Есть лимит'
     )
     price_limit = models.CharField(max_length = 256, default = 'Золотая карта')
+    creator_chat_id = models.CharField(max_length = 256, default=None)
     registration_date = models.DateField()
     gift_dispatch_date = models.DateField()
     class Meta:

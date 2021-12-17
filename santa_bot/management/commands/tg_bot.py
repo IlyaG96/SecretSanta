@@ -1,6 +1,6 @@
 # @SecretSanta_bot
 import telegram
-
+import json
 from environs import Env
 
 from django.core.management.base import BaseCommand
@@ -18,18 +18,13 @@ from telegram.ext import (
     MessageHandler,
     Filters,
     ConversationHandler,
-    CallbackContext,
 )
-
-from .santa_game import start_santa_game
 
 env = Env()
 env.read_env()
 
 telegram_token = env.str('TG_TOKEN')
 
-
-# Enable logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
 )
@@ -67,7 +62,7 @@ def start(update, context):
 
 
 def chose_game_name(update, context):
-    text = 'Введите название игры (не менее 7 латинских символов без цифр и пробелов)'
+    text = 'Введите название игры (не менее 7 латинских букв и цифр без пробелов)'
 
     update.message.reply_text(
         text,
@@ -107,7 +102,7 @@ def chose_game_price_back(update, context):
 
 def chose_game_reg_ends(update, context):
     if update.message.text != 'Назад ⬅':
-        context.user_data['game_price'] = update.message.text
+        context.user_data['price_limit'] = update.message.text
 
     game_name = context.user_data['game_name']
 
@@ -134,7 +129,7 @@ def chose_game_reg_ends_back(update, context):
 
 def chose_game_gift_date(update, context):
     if update.message.text != 'Назад ⬅':
-        context.user_data['game_reg_ends'] = update.message.text
+        context.user_data['registration_date'] = update.message.text
 
     keyboard = [['Назад ⬅']]
     text = 'Введите день для отправки подарков в формате 2021-12-29:'
@@ -156,33 +151,34 @@ def chose_game_gift_date_back(update, context):
 
 def game_confirmation(update, context):
     if update.message.text != 'Назад ⬅':
-        context.user_data['game_gift_send'] = update.message.text
+        context.user_data['gift_dispatch_date'] = update.message.text
 
     game_name = context.user_data['game_name']
-    game_price = context.user_data['game_price']
-    game_reg_ends = context.user_data['game_reg_ends']
-    game_gift_date = context.user_data['game_gift_send']
+    price_limit = context.user_data['price_limit']
+    registration_date = context.user_data['registration_date']
+    gift_dispatch_date = context.user_data['gift_dispatch_date']
 
     keyboard = [['Назад ⬅'], ['Подтвердить']]
 
     text = 'Подтвердите детали игры:\n' \
            f'Название игры: {game_name} \n' \
-           f'Ограничение по стоимости: {game_price} \n' \
-           f'Последний день для регистрации: {game_reg_ends} \n' \
-           f'День для отправки подарков: {game_gift_date} \n'
+           f'Ограничение по стоимости: {price_limit} \n' \
+           f'Последний день для регистрации: {registration_date} \n' \
+           f'День для отправки подарков: {gift_dispatch_date} \n'
     chat_id = update.message.chat_id
     participant, _ = Profile.objects.get_or_create(external_id=chat_id)
-    if context.user_data['game_price'] == 'Без ограничения по стоимости':
+    if context.user_data['price_limit'] == 'Без ограничения по стоимости':
         price_limit_status = True
     else:
         price_limit_status = False
     game = Game.objects.create(
+        creator_chat_id=chat_id,
         profile=participant,
         name=context.user_data['game_name'],
         price_limit_status=price_limit_status,
-        price_limit=context.user_data['game_price'],
-        registration_date=context.user_data['game_reg_ends'],
-        gift_dispatch_date=context.user_data['game_gift_send'],
+        price_limit=context.user_data['price_limit'],
+        registration_date=context.user_data['registration_date'],
+        gift_dispatch_date=context.user_data['gift_dispatch_date'],
     )
     game.save
     update.message.reply_text(
@@ -210,16 +206,16 @@ def send_game_url(update, context):
 
 
 def start_santa_game(update, context):
+
     game_name = context.args[0]
     context.user_data['game_name'] = game_name
-    context.user_data['user_id'] = update.message.from_user.id
-    user_id = context.user_data['user_id']
+    context.user_data['chat_id'] = update.message.chat_id
+    chat_id = context.user_data['chat_id']
+    game = Game.objects.all().values().get(name__exact=game_name)
 
-    with open(file=f'{game_name}.json', mode='r') as file:
-        game = json.load(file)
-        game_owner = game['game_owner']
+    game_owner = game['creator_chat_id']
 
-    if user_id == game_owner:
+    if chat_id == int(game_owner):
         keyboard = [
             ['Информация об игре'],
             ['Список участников'],
@@ -238,16 +234,12 @@ def start_santa_game(update, context):
 
         keyboard = [['Ура! Сейчас я расскажу, что хочу получить на Новый Год!']]
 
-        with open(file=f'{game_name}.json', mode='r') as file:
-            game = json.load(file)
-            game_details = game['game_details']
-
         update.message.reply_text(
-            f'Привет! {game_owner} приглашает тебя поучаствовать в игре Тайный Санта!\n'
-            f'Название игры: {game_name}\n'
-            f'Подарки должны стоить: {game_details["game_price"]}\n'
-            f'Последний день для регистрации: {game_details["game_reg_ends"]}\n'
-            f'А подарочки вручим вот когда: {game_details["game_gift_date"]}\n',
+            f'Привет! Приглашаю тебя поучаствовать в игре "Тайный Санта"!\n'
+            f'Название игры: {game["name"]}\n'
+            f'Подарки должны стоить: {game["price_limit"]}\n'
+            f'Последний день для регистрации: {game["registration_date"]}\n'
+            f'А подарочки вручим вот когда: {game["gift_dispatch_date"]}\n',
             reply_markup=ReplyKeyboardMarkup(
                 keyboard,
                 resize_keyboard=True,
@@ -260,6 +252,8 @@ def start_santa_game(update, context):
 def collect_guest_name(update, context):
     user = update.message.from_user
     first_name = user.first_name
+    context.user_data['first_name'] = first_name
+
     keyboard = [
         ['Ввести полное ФИО (в разаработке)'],
         ['Подтвердить'],
@@ -282,23 +276,13 @@ def collect_guest_name_back(update, context):
 
 
 def collect_guest_wish(update, context):
-    user = update.message.from_user
 
     keyboard = [['Назад ⬅']]
 
     if update.message.text != 'Назад ⬅':
+        user = update.message.from_user
         first_name = user.first_name
-        game_name = context.user_data['game_name']
-
-        with open(file=f'{game_name}.json', mode='r') as file:
-            game = json.load(file)
-
-            game['game_participants'].update(
-                {first_name: {'pair': None, 'wish': None, 'mail': None, '"letter': None}}
-            )
-
-        with open(file=f'{game_name}.json', mode='w') as file:
-            json.dump(game, file, ensure_ascii=False)
+        context.user_data['first_name'] = first_name
 
     update.message.reply_text(
         f'Теперь твое желание!',
@@ -316,22 +300,13 @@ def collect_guest_wish_back(update, context):
 
 
 def collect_guest_mail(update, context):
-    user = update.message.from_user
-    first_name = user.first_name
-    game_name = context.user_data['game_name']
 
     keyboard = [['Назад ⬅']]
 
     if update.message.text != 'Назад ⬅':
 
         wish = update.message.text
-
-        with open(file=f'{game_name}.json', mode='r') as file:
-            game = json.load(file)
-            game['game_participants'][first_name]['wish'] = wish
-
-        with open(file=f'{game_name}.json', mode='w') as file:
-            json.dump(game, file, ensure_ascii=False)
+        context.user_data['wish'] = wish
 
     update.message.reply_text(
         f'Введи, пожалуйста, свою электронную почту!',
@@ -348,21 +323,12 @@ def collect_guest_mail_back(update, context):
 
 
 def collect_guest_letter(update, context):
-    user = update.message.from_user
-    first_name = user.first_name
-    game_name = context.user_data['game_name']
     keyboard = [['Назад ⬅']]
 
     if update.message.text != 'Назад ⬅':
 
         mail = update.message.text
-
-        with open(file=f'{game_name}.json', mode='r') as file:
-            game = json.load(file)
-            game['game_participants'][first_name]['mail'] = mail
-
-        with open(file=f'{game_name}.json', mode='w') as file:
-            json.dump(game, file, ensure_ascii=False)
+        context.user_data['mail'] = mail
 
     update.message.reply_text(
         f'Как насчет коротенького послания Санте?',
@@ -379,23 +345,25 @@ def collect_guest_letter_back(update, context):
 
 
 def collect_guest_end(update, context):
-    user = update.message.from_user
-    first_name = user.first_name
-    game_name = context.user_data['game_name']
 
     if update.message.text != 'Назад ⬅':
 
         letter = update.message.text
+        context.user_data['letter'] = letter
 
-        with open(file=f'{game_name}.json', mode='r') as file:
-            game = json.load(file)
-            game['game_participants'][first_name]['letter'] = letter
-
-        with open(file=f'{game_name}.json', mode='w') as file:
-            json.dump(game, file, ensure_ascii=False)
+    chat_id = context.user_data['chat_id']  # value for db
+    name = context.user_data['first_name']
+    wish = context.user_data['wish']
+    mail = context.user_data['mail']
+    letter = context.user_data['letter']
 
     update.message.reply_text(
-        f'Поздравляю! Ты в игре. В назначенный день жди своего письма!',
+        f'Поздравляю! Ты в игре. Давай еще раз все проверим: \n'
+        f'Тебя зовут: {name}\n'
+        f'Твое желание на Новый Год: {wish}\n'
+        f'Твоя электронная почта: {mail}\n'
+        f'Твое послание Санте: {letter}\n'
+        f'В назначенный день жди своего письма!',
         reply_markup=ReplyKeyboardRemove()
     )
 
@@ -403,11 +371,12 @@ def collect_guest_end(update, context):
 
 
 def admin_participants(update, context):
+
     bot = context.bot
     game_name = context.user_data['game_name']
     url = helpers.create_deep_linked_url(bot.username, game_name)
 
-    with open(file=f'{game_name}.json', mode='r') as file:
+    with open(file=f'{game_name}.json', mode='r') as file:  # replace from db
         text = json.load(file)
         game_participants = text.get('game_participants')
         if not game_participants:
@@ -437,43 +406,49 @@ def admin_participants(update, context):
                 )
             )
 
+
 class Command(BaseCommand):
     help = 'Телеграм-бот'
 
     def handle(self, *args, **options):
-        # Create the Updater and pass it your bot's token.
         updater = Updater(telegram_token)
-
-        # Get the dispatcher to register handlers
         dispatcher = updater.dispatcher
-
-        # Add conversation handler with the states CHOICE, TITLE, PHOTO, CONTACT, LOCATION
         conv_handler = ConversationHandler(
-            entry_points=[CommandHandler('start', start)],
+            entry_points=[
+                CommandHandler('start', start_santa_game, filters=Filters.regex('^.{7,99}$')),
+                CommandHandler('start', start),
+            ],
+
             states={
                 SANTA_GAME: [
                     CommandHandler("start", start_santa_game, filters=Filters.regex('^.{7,20}$')),
                     MessageHandler(Filters.regex('^Создать игру$'), chose_game_name),
                 ],
                 GAME_NAME: [
-                    MessageHandler(Filters.text, chose_game_price)
+                    MessageHandler(Filters.regex('^[a-zA-Z0-9_].{7,99}$'), chose_game_price),
+                    MessageHandler(Filters.text, chose_game_name)
                 ],
                 GAME_PRICE: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_name),
                     MessageHandler(Filters.text, chose_game_reg_ends)
                 ],
                 GAME_REG_ENDS: [
+                    MessageHandler(Filters.regex(r'^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$'),
+                                   chose_game_gift_date),
                     MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_price_back),
-                    MessageHandler(Filters.text, chose_game_gift_date)
+
                 ],
                 GAME_GIFT_DATE: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_reg_ends_back),
-                    MessageHandler(Filters.text, game_confirmation)
+                    MessageHandler(Filters.regex(r'^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$'),
+                                   game_confirmation),
+                    MessageHandler(Filters.text, chose_game_price_back)
                 ],
                 GAME_CONFIRMATION: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_gift_date_back),
                     MessageHandler(Filters.regex('^Подтвердить$'), send_game_url)
                 ],
+
                 # collect guest information branch
                 GUEST_COLLECT_NAME: [
                     MessageHandler(Filters.regex('^Ура! Сейчас я расскажу, что хочу получить на Новый Год!$'),
@@ -494,7 +469,7 @@ class Command(BaseCommand):
                 ],
                 GUEST_COLLECT_END: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_letter_back),
-                    MessageHandler(Filters.text, collect_guest_end)  # need to fix
+                    MessageHandler(Filters.text, collect_guest_end)  #need to fix
                 ],
 
                 # admin branch
@@ -503,20 +478,10 @@ class Command(BaseCommand):
                     MessageHandler(Filters.regex('^Ввести данные для участия в игре$'), collect_guest_name)
                 ]
             },
-            fallbacks=[CommandHandler('start', start),
-                       MessageHandler(Filters.regex('^Начать$'), start)],
-            allow_reentry=True,
+            fallbacks=[CommandHandler('start', start), MessageHandler(Filters.regex('^Начать$'), start)],
             per_user=False,
             per_chat=True
         )
-
         dispatcher.add_handler(conv_handler)
-        #dispatcher.add_error_handler(error)
-
-        # Start the Bot
         updater.start_polling()
-
-        # Run the bot until you press Ctrl-C or the process receives SIGINT,
-        # SIGTERM or SIGABRT. This should be used most of the time, since
-        # start_polling() is non-blocking and will stop the bot gracefully.
         updater.idle()
