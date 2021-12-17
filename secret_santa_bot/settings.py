@@ -9,10 +9,8 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-import os
 
 from pathlib import Path
-import dj_database_url
 
 from environs import Env
 
@@ -30,7 +28,7 @@ SECRET_KEY = env.str('SECRET_KEY', 'REPLACE_ME')
 
 DEBUG = env.bool('DEBUG', True)
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -81,13 +79,11 @@ WSGI_APPLICATION = 'secret_santa_bot.wsgi.application'
 
 DATABASES = {
     'default': {
-        # 'ENGINE': env.str('DB_ENGINE', 'django.db.backends.sqlite3'),
-        # 'NAME': BASE_DIR / env.str('DB_FILENAME', 'db.sqlite3'),
+        'ENGINE': env.str('DB_ENGINE', 'django.db.backends.sqlite3'),
+        'NAME': BASE_DIR / env.str('DB_FILENAME', 'db.sqlite3'),
     }
 }
 
-db_from_env = dj_database_url.config()
-DATABASES['default'].update(db_from_env)
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
@@ -127,7 +123,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
