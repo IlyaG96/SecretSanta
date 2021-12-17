@@ -437,6 +437,9 @@ def admin_participants(update, context):
                 )
             )
 
+
+    conv_handler = ConversationHandler(
+
 class Command(BaseCommand):
     help = 'Телеграм-бот'
 
@@ -449,7 +452,10 @@ class Command(BaseCommand):
 
         # Add conversation handler with the states CHOICE, TITLE, PHOTO, CONTACT, LOCATION
         conv_handler = ConversationHandler(
-            entry_points=[CommandHandler('start', start)],
+            entry_points=[
+                CommandHandler('start', start_santa_game, filters=Filters.regex('^.{7,99}$')),
+                CommandHandler('start', start),
+            ],
             states={
                 SANTA_GAME: [
                     CommandHandler("start", start_santa_game, filters=Filters.regex('^.{7,20}$')),
