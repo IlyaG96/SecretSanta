@@ -62,7 +62,7 @@ def start(update, context):
 
 
 def chose_game_name(update, context):
-    text = 'Введите название игры (не менее 7 латинских символов без цифр и пробелов)'
+    text = 'Введите название игры (не менее 7 латинских букв и цифр без пробелов)'
 
     update.message.reply_text(
         text,
@@ -430,19 +430,24 @@ class Command(BaseCommand):
                     MessageHandler(Filters.regex('^Создать игру$'), chose_game_name),
                 ],
                 GAME_NAME: [
-                    MessageHandler(Filters.text, chose_game_price)
+                    MessageHandler(Filters.regex('^[a-zA-Z0-9_].{7,99}$'), chose_game_price),
+                    MessageHandler(Filters.text, chose_game_name)
                 ],
                 GAME_PRICE: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_name),
                     MessageHandler(Filters.text, chose_game_reg_ends)
                 ],
                 GAME_REG_ENDS: [
+                    MessageHandler(Filters.regex(r'^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$'),
+                                   chose_game_gift_date),
                     MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_price_back),
-                    MessageHandler(Filters.text, chose_game_gift_date)
+
                 ],
                 GAME_GIFT_DATE: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_reg_ends_back),
-                    MessageHandler(Filters.text, game_confirmation)
+                    MessageHandler(Filters.regex(r'^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$'),
+                                   game_confirmation),
+                    MessageHandler(Filters.text, chose_game_price_back)
                 ],
                 GAME_CONFIRMATION: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_gift_date_back),
