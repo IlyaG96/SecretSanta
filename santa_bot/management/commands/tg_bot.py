@@ -102,7 +102,7 @@ def chose_game_price_back(update, context):
 
 def chose_game_reg_ends(update, context):
     if update.message.text != 'Назад ⬅':
-        context.user_data['game_price'] = update.message.text
+        context.user_data['price_limit'] = update.message.text
 
     game_name = context.user_data['game_name']
 
@@ -129,7 +129,7 @@ def chose_game_reg_ends_back(update, context):
 
 def chose_game_gift_date(update, context):
     if update.message.text != 'Назад ⬅':
-        context.user_data['game_reg_ends'] = update.message.text
+        context.user_data['registration_date'] = update.message.text
 
     keyboard = [['Назад ⬅']]
     text = 'Введите день для отправки подарков в формате 2021-12-29:'
@@ -151,33 +151,34 @@ def chose_game_gift_date_back(update, context):
 
 def game_confirmation(update, context):
     if update.message.text != 'Назад ⬅':
-        context.user_data['game_gift_send'] = update.message.text
+        context.user_data['gift_dispatch_date'] = update.message.text
 
     game_name = context.user_data['game_name']
-    game_price = context.user_data['game_price']
-    game_reg_ends = context.user_data['game_reg_ends']
-    game_gift_date = context.user_data['game_gift_send']
+    price_limit = context.user_data['price_limit']
+    registration_date = context.user_data['registration_date']
+    gift_dispatch_date = context.user_data['gift_dispatch_date']
 
     keyboard = [['Назад ⬅'], ['Подтвердить']]
 
     text = 'Подтвердите детали игры:\n' \
            f'Название игры: {game_name} \n' \
-           f'Ограничение по стоимости: {game_price} \n' \
-           f'Последний день для регистрации: {game_reg_ends} \n' \
-           f'День для отправки подарков: {game_gift_date} \n'
+           f'Ограничение по стоимости: {price_limit} \n' \
+           f'Последний день для регистрации: {registration_date} \n' \
+           f'День для отправки подарков: {gift_dispatch_date} \n'
     chat_id = update.message.chat_id
     participant, _ = Profile.objects.get_or_create(external_id=chat_id)
-    if context.user_data['game_price'] == 'Без ограничения по стоимости':
+    if context.user_data['price_limit'] == 'Без ограничения по стоимости':
         price_limit_status = True
     else:
         price_limit_status = False
     game = Game.objects.create(
+        creator_chat_id=chat_id,
         profile=participant,
         name=context.user_data['game_name'],
         price_limit_status=price_limit_status,
-        price_limit=context.user_data['game_price'],
-        registration_date=context.user_data['game_reg_ends'],
-        gift_dispatch_date=context.user_data['game_gift_send'],
+        price_limit=context.user_data['price_limit'],
+        registration_date=context.user_data['registration_date'],
+        gift_dispatch_date=context.user_data['gift_dispatch_date'],
     )
     game.save
     update.message.reply_text(
@@ -208,13 +209,11 @@ def start_santa_game(update, context):
 
     game_name = context.args[0]
     context.user_data['game_name'] = game_name
-    context.user_data['user_id'] = update.message.chat_id
+    context.user_data['chat_id'] = update.message.chat_id
     chat_id = context.user_data['chat_id']
+    game = Game.objects.all().values().get(name__exact=game_name)
 
-
-    with open(file=f'{game_name}.json', mode='r') as file:
-        game = json.load(file)
-        game_owner = game['game_owner']  # by chat_id
+    game_owner = game['creator_chat_id']
 
     if chat_id == game_owner:
         keyboard = [
@@ -235,16 +234,12 @@ def start_santa_game(update, context):
 
         keyboard = [['Ура! Сейчас я расскажу, что хочу получить на Новый Год!']]
 
-        with open(file=f'{game_name}.json', mode='r') as file:  # replace from db
-            game = json.load(file)
-            game_details = game['game_details']
-
         update.message.reply_text(
-            f'Привет! {game_owner} приглашает тебя поучаствовать в игре Тайный Санта!\n'
-            f'Название игры: {game_name}\n'
-            f'Подарки должны стоить: {game_details["game_price"]}\n'
-            f'Последний день для регистрации: {game_details["game_reg_ends"]}\n'
-            f'А подарочки вручим вот когда: {game_details["game_gift_date"]}\n',
+            f'Привет! Приглашаю тебя поучаствовать в игре "Тайный Санта"!\n'
+            f'Название игры: {game["game_name"]}\n'
+            f'Подарки должны стоить: {game["price_limit"]}\n'
+            f'Последний день для регистрации: {game["registration_date"]}\n'
+            f'А подарочки вручим вот когда: {game["gift_dispatch_date"]}\n',
             reply_markup=ReplyKeyboardMarkup(
                 keyboard,
                 resize_keyboard=True,
@@ -381,7 +376,7 @@ def admin_participants(update, context):
     game_name = context.user_data['game_name']
     url = helpers.create_deep_linked_url(bot.username, game_name)
 
-    with open(file=f'{game_name}.json', mode='r') as file:
+    with open(file=f'{game_name}.json', mode='r') as file:  # replace from db
         text = json.load(file)
         game_participants = text.get('game_participants')
         if not game_participants:
