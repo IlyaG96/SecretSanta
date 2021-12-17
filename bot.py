@@ -230,19 +230,20 @@ if __name__ == '__main__':
             # collect guest information branch
             GUEST_COLLECT_NAME: [
                 MessageHandler(Filters.regex('^Ура! Сейчас я расскажу, что хочу получить на Новый Год!$'),
-                               collect_guest_name)
+                               collect_guest_name),
+                MessageHandler(Filters.regex('^Подтвердить$'), collect_guest_wish)
             ],
             GUEST_COLLECT_WISH: [
                 MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_name_back),
-                MessageHandler(Filters.text, collect_guest_wish)
+                MessageHandler(Filters.text, collect_guest_mail)
             ],
             GUEST_COLLECT_MAIL: [
                 MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_wish_back),
-                MessageHandler(Filters.text, collect_guest_mail)
+                MessageHandler(Filters.text, collect_guest_letter)
             ],
             GUEST_COLLECT_LETTER: [
                 MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_mail_back),
-                MessageHandler(Filters.text, collect_guest_letter)
+                MessageHandler(Filters.text, collect_guest_end)
             ],
             GUEST_COLLECT_END: [
                 MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_letter_back),

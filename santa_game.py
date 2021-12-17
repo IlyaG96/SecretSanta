@@ -34,9 +34,8 @@ def start_santa_game(update, context):
         return ADMIN_GAME_VIEW
 
     else:
-        keyboard = [
-            ['Ура! Сейчас я расскажу, что хочу получить на Новый Год!']
-        ]
+
+        keyboard = [['Ура! Сейчас я расскажу, что хочу получить на Новый Год!']]
 
         with open(file=f'{game_name}.json', mode='r') as file:
             game = json.load(file)
@@ -63,7 +62,7 @@ def collect_guest_name(update, context):
     keyboard = [
         ['Ввести полное ФИО (в разаработке)'],
         ['Подтвердить'],
-        ['Назад ⬅']
+        ['Назад ⬅ (в разработке)']
     ]
     update.message.reply_text(
         f'Отлично. Для начала, давай познакомимся\n'
@@ -74,7 +73,7 @@ def collect_guest_name(update, context):
             resize_keyboard=True,
         )
     )
-    return GUEST_COLLECT_WISH
+    return GUEST_COLLECT_NAME
 
 
 def collect_guest_name_back(update, context):
@@ -84,9 +83,7 @@ def collect_guest_name_back(update, context):
 def collect_guest_wish(update, context):
     user = update.message.from_user
 
-    keyboard = [
-        ['Назад ⬅']
-    ]
+    keyboard = [['Назад ⬅']]
 
     if update.message.text != 'Назад ⬅':
         first_name = user.first_name
@@ -110,7 +107,7 @@ def collect_guest_wish(update, context):
         )
     )
 
-    return GUEST_COLLECT_MAIL
+    return GUEST_COLLECT_WISH
 
 
 def collect_guest_wish_back(update, context):
@@ -142,7 +139,7 @@ def collect_guest_mail(update, context):
             resize_keyboard=True)
     )
 
-    return GUEST_COLLECT_LETTER
+    return GUEST_COLLECT_MAIL
 
 
 def collect_guest_mail_back(update, context):
@@ -173,7 +170,7 @@ def collect_guest_letter(update, context):
             resize_keyboard=True)
     )
 
-    return GUEST_COLLECT_END
+    return GUEST_COLLECT_LETTER
 
 
 def collect_guest_letter_back(update, context):
