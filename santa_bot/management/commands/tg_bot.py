@@ -234,7 +234,7 @@ def start_santa_game(update, context):
 
         keyboard = [['Ура! Сейчас я расскажу, что хочу получить на Новый Год!']]
 
-        with open(file=f'{game_name}.json', mode='r') as file:
+        with open(file=f'{game_name}.json', mode='r') as file:  # replace from db
             game = json.load(file)
             game_details = game['game_details']
 
@@ -256,6 +256,8 @@ def start_santa_game(update, context):
 def collect_guest_name(update, context):
     user = update.message.from_user
     first_name = user.first_name
+    context.user_data['first_name'] = first_name
+
     keyboard = [
         ['Ввести полное ФИО (в разаработке)'],
         ['Подтвердить'],
@@ -278,23 +280,13 @@ def collect_guest_name_back(update, context):
 
 
 def collect_guest_wish(update, context):
-    user = update.message.from_user
 
     keyboard = [['Назад ⬅']]
 
     if update.message.text != 'Назад ⬅':
+        user = update.message.from_user
         first_name = user.first_name
-        game_name = context.user_data['game_name']
-
-        with open(file=f'{game_name}.json', mode='r') as file:
-            game = json.load(file)
-
-            game['game_participants'].update(
-                {first_name: {'pair': None, 'wish': None, 'mail': None, '"letter': None}}
-            )
-
-        with open(file=f'{game_name}.json', mode='w') as file:
-            json.dump(game, file, ensure_ascii=False)
+        context.user_data['first_name'] = first_name
 
     update.message.reply_text(
         f'Теперь твое желание!',
@@ -312,22 +304,13 @@ def collect_guest_wish_back(update, context):
 
 
 def collect_guest_mail(update, context):
-    user = update.message.from_user
-    first_name = user.first_name
-    game_name = context.user_data['game_name']
 
     keyboard = [['Назад ⬅']]
 
     if update.message.text != 'Назад ⬅':
 
         wish = update.message.text
-
-        with open(file=f'{game_name}.json', mode='r') as file:
-            game = json.load(file)
-            game['game_participants'][first_name]['wish'] = wish
-
-        with open(file=f'{game_name}.json', mode='w') as file:
-            json.dump(game, file, ensure_ascii=False)
+        context.user_data['wish'] = wish
 
     update.message.reply_text(
         f'Введи, пожалуйста, свою электронную почту!',
@@ -344,21 +327,12 @@ def collect_guest_mail_back(update, context):
 
 
 def collect_guest_letter(update, context):
-    user = update.message.from_user
-    first_name = user.first_name
-    game_name = context.user_data['game_name']
     keyboard = [['Назад ⬅']]
 
     if update.message.text != 'Назад ⬅':
 
         mail = update.message.text
-
-        with open(file=f'{game_name}.json', mode='r') as file:
-            game = json.load(file)
-            game['game_participants'][first_name]['mail'] = mail
-
-        with open(file=f'{game_name}.json', mode='w') as file:
-            json.dump(game, file, ensure_ascii=False)
+        context.user_data['mail'] = mail
 
     update.message.reply_text(
         f'Как насчет коротенького послания Санте?',
@@ -375,23 +349,25 @@ def collect_guest_letter_back(update, context):
 
 
 def collect_guest_end(update, context):
-    user = update.message.from_user
-    first_name = user.first_name
-    game_name = context.user_data['game_name']
 
     if update.message.text != 'Назад ⬅':
 
         letter = update.message.text
+        context.user_data['letter'] = letter
 
-        with open(file=f'{game_name}.json', mode='r') as file:
-            game = json.load(file)
-            game['game_participants'][first_name]['letter'] = letter
-
-        with open(file=f'{game_name}.json', mode='w') as file:
-            json.dump(game, file, ensure_ascii=False)
+    user_id = context.user_data['user_id']
+    name = context.user_data['name']
+    wish = context.user_data['wish']
+    mail = context.user_data['mail']
+    letter = context.user_data['letter']
 
     update.message.reply_text(
-        f'Поздравляю! Ты в игре. В назначенный день жди своего письма!',
+        f'Поздравляю! Ты в игре. Давай еще раз все проверим: \n'
+        f'Тебя зовут: {name}\n'
+        f'Твое желание на Новый Год: {wish}\n'
+        f'Твоя электронная почта: {mail}\n'
+        f'Твое послание Санте: {letter}\n'
+        f'В назначенный день жди своего письма!',
         reply_markup=ReplyKeyboardRemove()
     )
 
@@ -399,6 +375,7 @@ def collect_guest_end(update, context):
 
 
 def admin_participants(update, context):
+
     bot = context.bot
     game_name = context.user_data['game_name']
     url = helpers.create_deep_linked_url(bot.username, game_name)
