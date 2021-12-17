@@ -4,6 +4,7 @@ from environs import Env
 from django.core.management.base import BaseCommand
 from django.db.models import F
 from santa_bot.models import Profile, Game
+from telegram.utils import helpers
 
 import logging
 from datetime import datetime, timedelta
@@ -242,6 +243,8 @@ class Command(BaseCommand):
             fallbacks=[CommandHandler('start', start),
                        MessageHandler(Filters.regex('^Начать$'), start)],
             allow_reentry=True,
+            per_user=False,
+            per_chat=True
         )
 
         dispatcher.add_handler(conv_handler)

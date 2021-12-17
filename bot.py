@@ -247,7 +247,7 @@ if __name__ == '__main__':
             ],
             GUEST_COLLECT_END: [
                 MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_letter_back),
-                MessageHandler(Filters.text, collect_guest_end)
+                MessageHandler(Filters.text, collect_guest_end) #need to fix
             ],
 
             # admin branch
