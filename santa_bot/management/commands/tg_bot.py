@@ -215,7 +215,7 @@ def start_santa_game(update, context):
 
     game_owner = game['creator_chat_id']
 
-    if chat_id == game_owner:
+    if chat_id == int(game_owner):
         keyboard = [
             ['Информация об игре'],
             ['Список участников'],
@@ -236,7 +236,7 @@ def start_santa_game(update, context):
 
         update.message.reply_text(
             f'Привет! Приглашаю тебя поучаствовать в игре "Тайный Санта"!\n'
-            f'Название игры: {game["game_name"]}\n'
+            f'Название игры: {game["name"]}\n'
             f'Подарки должны стоить: {game["price_limit"]}\n'
             f'Последний день для регистрации: {game["registration_date"]}\n'
             f'А подарочки вручим вот когда: {game["gift_dispatch_date"]}\n',
