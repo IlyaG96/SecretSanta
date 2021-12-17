@@ -20,8 +20,6 @@ from telegram.ext import (
     ConversationHandler,
 )
 
-from .santa_game import start_santa_game
-
 env = Env()
 env.read_env()
 
