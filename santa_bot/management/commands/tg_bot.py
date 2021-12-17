@@ -1,6 +1,6 @@
 # @SecretSanta_bot
 import telegram
-
+import json
 from environs import Env
 
 from django.core.management.base import BaseCommand
@@ -18,7 +18,6 @@ from telegram.ext import (
     MessageHandler,
     Filters,
     ConversationHandler,
-    CallbackContext,
 )
 
 from .santa_game import start_santa_game
@@ -28,8 +27,6 @@ env.read_env()
 
 telegram_token = env.str('TG_TOKEN')
 
-
-# Enable logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
 )
@@ -210,6 +207,7 @@ def send_game_url(update, context):
 
 
 def start_santa_game(update, context):
+
     game_name = context.args[0]
     context.user_data['game_name'] = game_name
     context.user_data['user_id'] = update.message.from_user.id
@@ -438,24 +436,18 @@ def admin_participants(update, context):
             )
 
 
-    conv_handler = ConversationHandler(
-
 class Command(BaseCommand):
     help = 'Телеграм-бот'
 
     def handle(self, *args, **options):
-        # Create the Updater and pass it your bot's token.
         updater = Updater(telegram_token)
-
-        # Get the dispatcher to register handlers
         dispatcher = updater.dispatcher
-
-        # Add conversation handler with the states CHOICE, TITLE, PHOTO, CONTACT, LOCATION
         conv_handler = ConversationHandler(
             entry_points=[
                 CommandHandler('start', start_santa_game, filters=Filters.regex('^.{7,99}$')),
                 CommandHandler('start', start),
             ],
+
             states={
                 SANTA_GAME: [
                     CommandHandler("start", start_santa_game, filters=Filters.regex('^.{7,20}$')),
@@ -480,6 +472,7 @@ class Command(BaseCommand):
                     MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_gift_date_back),
                     MessageHandler(Filters.regex('^Подтвердить$'), send_game_url)
                 ],
+
                 # collect guest information branch
                 GUEST_COLLECT_NAME: [
                     MessageHandler(Filters.regex('^Ура! Сейчас я расскажу, что хочу получить на Новый Год!$'),
@@ -500,7 +493,7 @@ class Command(BaseCommand):
                 ],
                 GUEST_COLLECT_END: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_letter_back),
-                    MessageHandler(Filters.text, collect_guest_end)  # need to fix
+                    MessageHandler(Filters.text, collect_guest_end)  #need to fix
                 ],
 
                 # admin branch
@@ -509,20 +502,10 @@ class Command(BaseCommand):
                     MessageHandler(Filters.regex('^Ввести данные для участия в игре$'), collect_guest_name)
                 ]
             },
-            fallbacks=[CommandHandler('start', start),
-                       MessageHandler(Filters.regex('^Начать$'), start)],
-            allow_reentry=True,
+            fallbacks=[CommandHandler('start', start), MessageHandler(Filters.regex('^Начать$'), start)],
             per_user=False,
             per_chat=True
         )
-
         dispatcher.add_handler(conv_handler)
-        #dispatcher.add_error_handler(error)
-
-        # Start the Bot
         updater.start_polling()
-
-        # Run the bot until you press Ctrl-C or the process receives SIGINT,
-        # SIGTERM or SIGABRT. This should be used most of the time, since
-        # start_polling() is non-blocking and will stop the bot gracefully.
         updater.idle()
