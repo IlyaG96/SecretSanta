@@ -1,6 +1,5 @@
 # @SecretSanta_bot
 import telegram
-import json
 from environs import Env
 from hashlib import sha1
 
@@ -133,7 +132,7 @@ def chose_game_gift_date(update, context):
         context.user_data['registration_date'] = update.message.text
 
     keyboard = [['Назад ⬅']]
-    text = 'Введите день для отправки подарков в формате 2021-12-29:'
+    text = 'Введите день, в который планируется дарить подарки, в формате 2021-12-29:'
 
     update.message.reply_text(
         text,
@@ -144,6 +143,15 @@ def chose_game_gift_date(update, context):
     )
 
     return GAME_GIFT_DATE
+
+
+def check_date(update, context):
+    """заглушка. Дата выдачи подарков должна быть не раньше даты окончания регистрации"""
+    context.user_data['gift_dispatch_date'] = update.message.text
+    gift_dispatch_date = context.user_data['gift_dispatch_date']
+
+    if gift_dispatch_date > context.user_data['registration_date']:
+        return False
 
 
 def chose_game_gift_date_back(update, context):
@@ -370,7 +378,6 @@ def add_guest_to_database(update, context):
 
     game = Game.objects.get(game_hash=context.user_data['game_hash'])
 
-
     chat_id = context.user_data['chat_id']
     name = context.user_data['first_name']
     wish = context.user_data['wish']
@@ -401,17 +408,13 @@ def registered_participants(update, context):
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
 
     participants = game['participants'].keys()
-    wishes = []
     for participant in participants:
         wish = game['participants'][participant]["wishlist"]
-        wishes.append(wish)
         update.message.reply_text(
             f'А вот и пожелания участников:\n'
             f'{participant} хочет {wish} \n',
             reply_markup=ReplyKeyboardRemove()
         )
-
-
 
 
 class Command(BaseCommand):
