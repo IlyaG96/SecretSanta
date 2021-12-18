@@ -398,13 +398,18 @@ def add_guest_to_database(update, context):
 
 def registered_participants(update, context):
 
-    game = Game.objects.all().get(game_hash__exact=context.user_data['game_hash'])
+    game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
 
     participants = game['participants'].keys()
-    print(participants)
+    wishes = []
     for participant in participants:
-        wish = game['participants'][participant]
-        print(wish)
+        wish = game['participants'][participant]["wishlist"]
+        wishes.append(wish)
+        update.message.reply_text(
+            f'А вот и пожелания участников:\n'
+            f'{participant} хочет {wish} \n',
+            reply_markup=ReplyKeyboardRemove()
+        )
 
 
 
