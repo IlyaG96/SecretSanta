@@ -391,7 +391,7 @@ def add_guest_to_database(update, context):
     game['participants'].update({
         chat_id: {"name": name, "email": mail, "wishlist": wish, "message_for_Santa": letter
                   }})
-
+    game.save()
     update.message.reply_text(
         f'{game["gift_dispatch_date"]} мы проведем жеребьевку и ты узнаешь имя и контакты своего тайного друга. '
         f'Ему и нужно будет подарить подарок!',
