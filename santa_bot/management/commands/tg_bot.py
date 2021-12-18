@@ -374,7 +374,6 @@ def collect_guest_end(update, context):
     print(actual_participants)
 
     game.participants = actual_participants
-    print(game.participants)
     game.save()
     update.message.reply_text(
         f'Превосходно, давай еще раз все проверим! \n'
@@ -392,7 +391,7 @@ def collect_guest_end(update, context):
 
 def add_guest_to_database(update, context):
 
-    game = Game.objects.get(name=context.user_data['game_hash'])
+    game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
 
     chat_id = context.user_data['chat_id']
     name = context.user_data['first_name']
@@ -408,7 +407,7 @@ def add_guest_to_database(update, context):
     )
 
     update.message.reply_text(
-        f'{game.gift_dispatch_date} мы проведем жеребьевку и ты узнаешь имя и контакты своего тайного друга. '
+        f'{game["gift_dispatch_date"]} мы проведем жеребьевку и ты узнаешь имя и контакты своего тайного друга. '
         f'Ему и нужно будет подарить подарок!',
         reply_markup=ReplyKeyboardRemove()
     )
