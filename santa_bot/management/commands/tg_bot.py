@@ -2,6 +2,7 @@
 import telegram
 import json
 from environs import Env
+from hashlib import sha1
 
 from django.core.management.base import BaseCommand
 from django.db.models import F
@@ -157,6 +158,7 @@ def game_confirmation(update, context):
     price_limit = context.user_data['price_limit']
     registration_date = context.user_data['registration_date']
     gift_dispatch_date = context.user_data['gift_dispatch_date']
+    game_hash = sha1(game_name.encode())
 
     keyboard = [['Назад ⬅'], ['Подтвердить']]
 
@@ -172,6 +174,7 @@ def game_confirmation(update, context):
         price_limit_status = False
     game = Game.objects.create(
         creator_chat_id=chat_id,
+        game_hash=game_hash,
         name=context.user_data['game_name'],
         price_limit_status=price_limit_status,
         price_limit=context.user_data['price_limit'],
@@ -192,7 +195,7 @@ def game_confirmation(update, context):
 
 def send_game_url(update, context):
     bot = context.bot
-    game_id = f"{context.user_data['game_name']}"
+    game_id = context.user_data['game_hash']
     url = helpers.create_deep_linked_url(bot.username, game_id)
 
     text = 'Отлично, Тайный Санта уже готовится к раздаче подарков! '\
@@ -205,13 +208,14 @@ def send_game_url(update, context):
 
 def start_santa_game(update, context):
 
-    game_name = context.args[0]
-    context.user_data['game_name'] = game_name
+    game_hash = context.args[0]
+    context.user_data['game_hash'] = game_hash
     context.user_data['chat_id'] = update.message.chat_id
     chat_id = context.user_data['chat_id']
-    game = Game.objects.all().values().get(name__exact=game_name)
+    game = Game.objects.all().values().get(game_hash__exact=game_hash)
 
     game_owner = game['creator_chat_id']
+    game_name = game['game_name']
 
     if chat_id == int(game_owner):
         keyboard = [

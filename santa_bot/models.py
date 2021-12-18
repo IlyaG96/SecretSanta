@@ -24,6 +24,7 @@ class Profile(models.Model):
 
 class Game(models.Model):
     name = models.CharField(max_length = 256)
+    game_hash = models.CharField(max_length = 256, default=None)
     participants = jsonfield.JSONField(default=0)
     price_limit_status = models.BooleanField(default=False,
         verbose_name='Безлимит'
