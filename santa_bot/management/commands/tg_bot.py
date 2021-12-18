@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
     GAME_GIFT_DATE,
     GAME_CONFIRMATION,
 ) = range(6)
-ADMIN_GAME_VIEW, ADMIN_PARTICIPANTS = range(10, 12)
+REGISTERED_GAME_VIEW, ADMIN_PARTICIPANTS = range(10, 12)
 GUEST_COLLECT_NAME, GUEST_COLLECT_WISH, GUEST_COLLECT_MAIL, GUEST_COLLECT_LETTER, GUEST_COLLECT_END = range(20, 25)
 SANTA_GAME = 'share-link-with-game-id'
 IN_GAME = 'in-game'
@@ -214,30 +214,24 @@ def start_santa_game(update, context):
     chat_id = context.user_data['chat_id']
     game = Game.objects.all().values().get(game_hash__exact=game_hash)
 
-    game_owner = game['creator_chat_id']
     game_name = game['name']
     context.user_data['game_name'] = game_name
 
-    if chat_id == int(game_owner):
+    if chat_id == game['participants'].get(chat_id):
         keyboard = [
             ['Информация об игре'],
-            ['Список участников'],
-            ['Ввести данные для участия в игре']
+            ['Просмотреть виш-листы других участников'],
         ]
         update.message.reply_text(
-            f'Похоже, что Вы - создатель игры {game_name}',
+            f'Похоже, что ты уже зарегистрирован в игре {game_name}',
             reply_markup=ReplyKeyboardMarkup(
                 keyboard,
                 resize_keyboard=True,
             )
         )
-        return ADMIN_GAME_VIEW
-
-    elif None:
-        pass
+        return REGISTERED_GAME_VIEW
 
     else:
-
         keyboard = [['Ура! Сейчас я расскажу, что хочу получить на Новый Год!']]
 
         update.message.reply_text(
@@ -373,7 +367,9 @@ def collect_guest_end(update, context):
 
 
 def add_guest_to_database(update, context):
-    game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
+
+    game = Game.objects.get(game_hash=context.user_data['game_hash'])
+
 
     chat_id = context.user_data['chat_id']
     name = context.user_data['first_name']
@@ -388,12 +384,13 @@ def add_guest_to_database(update, context):
         message_for_Santa=letter,
     )
 
-    game['participants'].update({
+    game.participants.update({
         chat_id: {"name": name, "email": mail, "wishlist": wish, "message_for_Santa": letter
                   }})
     game.save()
+
     update.message.reply_text(
-        f'{game["gift_dispatch_date"]} мы проведем жеребьевку и ты узнаешь имя и контакты своего тайного друга. '
+        f'{game.gift_dispatch_date} мы проведем жеребьевку и ты узнаешь имя и контакты своего тайного друга. '
         f'Ему и нужно будет подарить подарок!',
         reply_markup=ReplyKeyboardRemove()
     )
@@ -500,10 +497,10 @@ class Command(BaseCommand):
                     MessageHandler(Filters.regex('^Подтвердить$'), add_guest_to_database)
                 ],
 
-                # admin branch
-                ADMIN_GAME_VIEW: [
-                    MessageHandler(Filters.regex('^Список участников$'), admin_participants),
-                    MessageHandler(Filters.regex('^Ввести данные для участия в игре$'), collect_guest_name)
+                # registered branch
+                REGISTERED_GAME_VIEW: [
+                    MessageHandler(Filters.regex('^Информация об игре$'), registred_info),
+                    MessageHandler(Filters.regex('^Просмотреть виш-листы других участников$'), registred_participants)
                 ]
             },
             fallbacks=[CommandHandler('start', start), MessageHandler(Filters.regex('^Начать$'), start)],
