@@ -1,6 +1,7 @@
 # @SecretSanta_bot
 import telegram
 import json
+import random
 from environs import Env
 from hashlib import sha1
 
@@ -398,6 +399,35 @@ def add_guest_to_database(update, context):
 
 def registred_participants(update, context):
     pass
+
+
+def perform_raffle(game_name):
+    game = Game.objects.get(name=game_name)
+    gift_dispatch_date = game.gift_dispatch_date.strftime("%Y-%m-%d")
+    actual_date = datetime.now().strftime("%Y-%m-%d")
+    if gift_dispatch_date == actual_date:
+        all_participant = list(game.participants.keys())
+        participant_quantity = len(all_participant)
+        if participant_quantity != 1:
+            remains = participant_quantity % 2
+            if remains == 0:
+                half_of_participant_quantity = participant_quantity // 2
+                first_half_of_participants = all_participant[:half_of_participant_quantity]
+                second_half_of_participants = all_participant[half_of_participant_quantity:]
+                print(second_half_of_participants)
+                raffle_pairs = dict(zip(first_half_of_participants, second_half_of_participants))
+                print(raffle_pairs)
+            else:
+                half_of_participant_quantity = participant_quantity // 2
+                first_half_of_participants = all_participant[:half_of_participant_quantity]
+                second_half_of_participants = all_participant[half_of_participant_quantity:]
+                raffle_pairs = dict(zip(first_half_of_participants, second_half_of_participants))
+                raffle_pairs[all_participant[-1]] = all_participant[0]
+                print(raffle_pairs)
+
+        else:
+            raffle_pairs = 'Одиночество - изнанка свободы.'
+            print(raffle_pairs)
 
 
 class Command(BaseCommand):
