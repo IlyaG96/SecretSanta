@@ -216,6 +216,7 @@ def start_santa_game(update, context):
 
     game_owner = game['creator_chat_id']
     game_name = game['game_name']
+    context.user_data['game_name'] = game_name
 
     if chat_id == int(game_owner):
         keyboard = [
@@ -231,6 +232,9 @@ def start_santa_game(update, context):
             )
         )
         return ADMIN_GAME_VIEW
+
+    elif None:
+        pass
 
     else:
 
@@ -348,12 +352,48 @@ def collect_guest_letter_back(update, context):
 
 def collect_guest_end(update, context):
 
+    keyboard = [['Назад ⬅'], ['Подтвердить']]
+
+
     if update.message.text != 'Назад ⬅':
 
         letter = update.message.text
         context.user_data['letter'] = letter
 
     chat_id = context.user_data['chat_id']  # value for db
+    name = context.user_data['first_name']
+    wish = context.user_data['wish']
+    mail = context.user_data['mail']
+    letter = context.user_data['letter']
+
+    game = Game.objects.get(name=context.user_data['game_name'])
+    actual_participants = []
+    actual_participants.append(game.participants)
+    actual_participants.append(chat_id)
+    print(actual_participants)
+
+    game.participants = actual_participants
+    print(game.participants)
+    game.save()
+    update.message.reply_text(
+        f'Превосходно, давай еще раз все проверим! \n'
+        f'Тебя зовут: {name}\n'
+        f'Твое желание на Новый Год: {wish}\n'
+        f'Твоя электронная почта: {mail}\n'
+        f'Твое послание Санте: {letter}\n',
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard
+        )
+    )
+
+    return GUEST_COLLECT_END
+
+
+def add_guest_to_database(update, context):
+
+    game = Game.objects.get(name=context.user_data['game_hash'])
+
+    chat_id = context.user_data['chat_id']
     name = context.user_data['first_name']
     wish = context.user_data['wish']
     mail = context.user_data['mail']
@@ -365,26 +405,12 @@ def collect_guest_end(update, context):
         wishlist = wish,
         message_for_Santa = letter,
     )
-    game = Game.objects.get(name=context.user_data['game_name'])
-    actual_participants = []
-    actual_participants.append(game.participants)
-    actual_participants.append(chat_id)
-    print(actual_participants)
 
-    game.participants = actual_participants
-    print(game.participants)
-    game.save()
     update.message.reply_text(
-        f'Превосходно, ты в игре!  \n'
-        f'Тебя зовут: {name}\n'
-        f'Твое желание на Новый Год: {wish}\n'
-        f'Твоя электронная почта: {mail}\n'
-        f'Твое послание Санте: {letter}\n'
-        f'{game.gift_dispatch_date}  мы проведем жеребьевку и ты узнаешь имя и контакты своего тайного друга. Ему и нужно будет подарить подарок!',
+        f'{game.gift_dispatch_date} мы проведем жеребьевку и ты узнаешь имя и контакты своего тайного друга. '
+        f'Ему и нужно будет подарить подарок!',
         reply_markup=ReplyKeyboardRemove()
     )
-
-    return GUEST_COLLECT_END
 
 
 def admin_participants(update, context):
@@ -486,7 +512,7 @@ class Command(BaseCommand):
                 ],
                 GUEST_COLLECT_END: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_letter_back),
-                    MessageHandler(Filters.text, collect_guest_end)  #need to fix
+                    MessageHandler(Filters.regex('^Подтвердить$'), add_guest_to_database)
                 ],
 
                 # admin branch
