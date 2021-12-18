@@ -216,7 +216,7 @@ def start_santa_game(update, context):
     game = Game.objects.all().values().get(game_hash__exact=game_hash)
 
     game_owner = game['creator_chat_id']
-    game_name = game['game_name']
+    game_name = game['name']
     context.user_data['game_name'] = game_name
 
     if chat_id == int(game_owner):
