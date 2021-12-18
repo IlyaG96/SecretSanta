@@ -159,6 +159,7 @@ def game_confirmation(update, context):
     registration_date = context.user_data['registration_date']
     gift_dispatch_date = context.user_data['gift_dispatch_date']
     game_hash = sha1(game_name.encode())
+    context.user_data['game_hash'] = game_hash.hexdigest()
 
     keyboard = [['Назад ⬅'], ['Подтвердить']]
 
@@ -174,7 +175,7 @@ def game_confirmation(update, context):
         price_limit_status = False
     game = Game.objects.create(
         creator_chat_id=chat_id,
-        game_hash=game_hash,
+        game_hash=game_hash.hexdigest(),
         name=context.user_data['game_name'],
         price_limit_status=price_limit_status,
         price_limit=context.user_data['price_limit'],
