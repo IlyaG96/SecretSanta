@@ -199,8 +199,8 @@ def send_game_url(update, context):
     game_id = context.user_data['game_hash']
     url = helpers.create_deep_linked_url(bot.username, game_id)
 
-    text = 'Отлично, Тайный Санта уже готовится к раздаче подарков! '\
-            f'Ссылка для участия в игре: {url}'
+    text = 'Отлично, Тайный Санта уже готовится к раздаче подарков! ' \
+           f'Ссылка для участия в игре: {url}'
     update.message.reply_text(
         text,
         reply_markup=ReplyKeyboardRemove()
@@ -208,7 +208,6 @@ def send_game_url(update, context):
 
 
 def start_santa_game(update, context):
-
     game_hash = context.args[0]
     context.user_data['game_hash'] = game_hash
     context.user_data['chat_id'] = update.message.chat_id
@@ -283,7 +282,6 @@ def collect_guest_name_back(update, context):
 
 
 def collect_guest_wish(update, context):
-
     keyboard = [['Назад ⬅']]
 
     if update.message.text != 'Назад ⬅':
@@ -307,11 +305,9 @@ def collect_guest_wish_back(update, context):
 
 
 def collect_guest_mail(update, context):
-
     keyboard = [['Назад ⬅']]
 
     if update.message.text != 'Назад ⬅':
-
         wish = update.message.text
         context.user_data['wish'] = wish
 
@@ -333,7 +329,6 @@ def collect_guest_letter(update, context):
     keyboard = [['Назад ⬅']]
 
     if update.message.text != 'Назад ⬅':
-
         mail = update.message.text
         context.user_data['mail'] = mail
 
@@ -352,29 +347,17 @@ def collect_guest_letter_back(update, context):
 
 
 def collect_guest_end(update, context):
-
     keyboard = [['Назад ⬅'], ['Подтвердить']]
 
-
     if update.message.text != 'Назад ⬅':
-
         letter = update.message.text
         context.user_data['letter'] = letter
 
-    chat_id = context.user_data['chat_id']  # value for db
     name = context.user_data['first_name']
     wish = context.user_data['wish']
     mail = context.user_data['mail']
     letter = context.user_data['letter']
 
-    game = Game.objects.get(name=context.user_data['game_name'])
-    actual_participants = []
-    actual_participants.append(game.participants)
-    actual_participants.append(chat_id)
-    print(actual_participants)
-
-    game.participants = actual_participants
-    game.save()
     update.message.reply_text(
         f'Превосходно, давай еще раз все проверим! \n'
         f'Тебя зовут: {name}\n'
@@ -390,7 +373,6 @@ def collect_guest_end(update, context):
 
 
 def add_guest_to_database(update, context):
-
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
 
     chat_id = context.user_data['chat_id']
@@ -400,11 +382,15 @@ def add_guest_to_database(update, context):
     letter = context.user_data['letter']
     participant, _ = Profile.objects.get_or_create(
         external_id=chat_id,
-        name = name,
-        email = mail,
-        wishlist = wish,
-        message_for_Santa = letter,
+        name=name,
+        email=mail,
+        wishlist=wish,
+        message_for_Santa=letter,
     )
+
+    game['participants'].update({
+        chat_id: {"name": name, "email": mail, "wishlist": wish, "message_for_Santa": letter
+                  }})
 
     update.message.reply_text(
         f'{game["gift_dispatch_date"]} мы проведем жеребьевку и ты узнаешь имя и контакты своего тайного друга. '
@@ -414,7 +400,6 @@ def add_guest_to_database(update, context):
 
 
 def admin_participants(update, context):
-
     bot = context.bot
     game_name = context.user_data['game_name']
     url = helpers.create_deep_linked_url(bot.username, game_name)
