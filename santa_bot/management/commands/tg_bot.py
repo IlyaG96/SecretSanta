@@ -64,7 +64,7 @@ def start(update, context):
 
 
 def chose_game_name(update, context):
-    text = 'Введите название игры (не менее 7 латинских букв и цифр без пробелов)'
+    text = 'Введите название игры'
 
     update.message.reply_text(
         text,
@@ -134,7 +134,7 @@ def chose_game_gift_date(update, context):
         context.user_data['registration_date'] = update.message.text
 
     keyboard = [['Назад ⬅']]
-    text = 'Введите день для отправки подарков в формате 2021-12-29:'
+    text = 'Введите день, в который планируется дарить подарки, в формате 2021-12-29:'
 
     update.message.reply_text(
         text,
@@ -145,6 +145,15 @@ def chose_game_gift_date(update, context):
     )
 
     return GAME_GIFT_DATE
+
+
+def check_date(update, context):
+    """заглушка. Дата выдачи подарков должна быть не раньше даты окончания регистрации"""
+    context.user_data['gift_dispatch_date'] = update.message.text
+    gift_dispatch_date = context.user_data['gift_dispatch_date']
+
+    if gift_dispatch_date > context.user_data['registration_date']:
+        return False
 
 
 def chose_game_gift_date_back(update, context):
@@ -218,7 +227,7 @@ def start_santa_game(update, context):
     game_name = game['name']
     context.user_data['game_name'] = game_name
 
-    if chat_id == game['participants'].get(chat_id):
+    if str(chat_id) in game['participants']:
         keyboard = [
             ['Информация об игре'],
             ['Просмотреть виш-листы других участников'],
@@ -371,7 +380,6 @@ def add_guest_to_database(update, context):
 
     game = Game.objects.get(game_hash=context.user_data['game_hash'])
 
-
     chat_id = context.user_data['chat_id']
     name = context.user_data['first_name']
     wish = context.user_data['wish']
@@ -397,8 +405,18 @@ def add_guest_to_database(update, context):
     )
 
 
-def registred_participants(update, context):
-    pass
+def registered_participants(update, context):
+
+    game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
+
+    participants = game['participants'].keys()
+    for participant in participants:
+        wish = game['participants'][participant]["wishlist"]
+        update.message.reply_text(
+            f'А вот и пожелания участников:\n'
+            f'{participant} хочет {wish} \n',
+            reply_markup=ReplyKeyboardRemove()
+        )
 
 
 def perform_raffle(game_name):
@@ -448,7 +466,7 @@ class Command(BaseCommand):
                     MessageHandler(Filters.regex('^Создать игру$'), chose_game_name),
                 ],
                 GAME_NAME: [
-                    MessageHandler(Filters.regex('^[a-zA-Z0-9_].{7,99}$'), chose_game_price),
+                    MessageHandler(Filters.regex('^.{7,20}$'), chose_game_price),
                     MessageHandler(Filters.text, chose_game_name)
                 ],
                 GAME_PRICE: [
@@ -497,8 +515,8 @@ class Command(BaseCommand):
 
                 # registered branch
                 REGISTERED_GAME_VIEW: [
-                    MessageHandler(Filters.regex('^Информация об игре$'), registred_participants),
-                    MessageHandler(Filters.regex('^Просмотреть виш-листы других участников$'), registred_participants)
+                    MessageHandler(Filters.regex('^Информация об игре$'), registered_participants),
+                    MessageHandler(Filters.regex('^Просмотреть виш-листы других участников$'), registered_participants)
                 ]
             },
             fallbacks=[CommandHandler('start', start), MessageHandler(Filters.regex('^Начать$'), start)],
