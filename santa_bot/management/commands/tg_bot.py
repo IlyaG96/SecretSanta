@@ -396,40 +396,8 @@ def add_guest_to_database(update, context):
     )
 
 
-def admin_participants(update, context):
-    bot = context.bot
-    game_name = context.user_data['game_name']
-    url = helpers.create_deep_linked_url(bot.username, game_name)
-
-    with open(file=f'{game_name}.json', mode='r') as file:  # replace from db
-        text = json.load(file)
-        game_participants = text.get('game_participants')
-        if not game_participants:
-            update.message.reply_text(
-                f'Похоже, в игре пока никто не участвует :(\n'
-                f'Поделитесь этой ссылкой с друзьями:\n'
-                f'{url}',
-                reply_markup=ReplyKeyboardRemove()
-            )
-
-        else:
-            participants = [participant for participant in game_participants.keys()]
-            num_of_participants = len(game_participants)
-
-            keyboard = [
-                ['Создать пары'],
-                ['Посмотреть, кто какой подарок хочет']
-            ]
-
-            update.message.reply_text(
-                f'В данный момент зарегистрировано{num_of_participants} участников, это:\n'
-                f'{", ".join(participants)}',
-
-                reply_markup=ReplyKeyboardMarkup(
-                    keyboard,
-                    resize_keyboard=True
-                )
-            )
+def registred_participants(update, context):
+    pass
 
 
 class Command(BaseCommand):
@@ -499,7 +467,7 @@ class Command(BaseCommand):
 
                 # registered branch
                 REGISTERED_GAME_VIEW: [
-                    MessageHandler(Filters.regex('^Информация об игре$'), registred_info),
+                    MessageHandler(Filters.regex('^Информация об игре$'), registred_participants),
                     MessageHandler(Filters.regex('^Просмотреть виш-листы других участников$'), registred_participants)
                 ]
             },
