@@ -166,14 +166,12 @@ def game_confirmation(update, context):
            f'Последний день для регистрации: {registration_date} \n' \
            f'День для отправки подарков: {gift_dispatch_date} \n'
     chat_id = update.message.chat_id
-    participant, _ = Profile.objects.get_or_create(external_id=chat_id)
     if context.user_data['price_limit'] == 'Без ограничения по стоимости':
         price_limit_status = True
     else:
         price_limit_status = False
     game = Game.objects.create(
         creator_chat_id=chat_id,
-        profile=participant,
         name=context.user_data['game_name'],
         price_limit_status=price_limit_status,
         price_limit=context.user_data['price_limit'],
@@ -356,14 +354,29 @@ def collect_guest_end(update, context):
     wish = context.user_data['wish']
     mail = context.user_data['mail']
     letter = context.user_data['letter']
+    participant, _ = Profile.objects.get_or_create(
+        external_id=chat_id,
+        name = name,
+        email = mail,
+        wishlist = wish,
+        message_for_Santa = letter,
+    )
+    game = Game.objects.get(name=context.user_data['game_name'])
+    actual_participants = []
+    actual_participants.append(game.participants)
+    actual_participants.append(chat_id)
+    print(actual_participants)
 
+    game.participants = actual_participants
+    print(game.participants)
+    game.save()
     update.message.reply_text(
-        f'Поздравляю! Ты в игре. Давай еще раз все проверим: \n'
+        f'Превосходно, ты в игре!  \n'
         f'Тебя зовут: {name}\n'
         f'Твое желание на Новый Год: {wish}\n'
         f'Твоя электронная почта: {mail}\n'
         f'Твое послание Санте: {letter}\n'
-        f'В назначенный день жди своего письма!',
+        f'{game.gift_dispatch_date}  мы проведем жеребьевку и ты узнаешь имя и контакты своего тайного друга. Ему и нужно будет подарить подарок!',
         reply_markup=ReplyKeyboardRemove()
     )
 

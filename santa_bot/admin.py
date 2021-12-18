@@ -14,7 +14,7 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Game)
 class GameAdmin(admin.ModelAdmin):
-    list_display = ('profile', 'name', 'price_limit_status', 'price_limit', 'registration_date', 'gift_dispatch_date', 'raffle')
+    list_display = ('creator_chat_id', 'name', 'price_limit_status', 'price_limit', 'registration_date', 'gift_dispatch_date', 'participants', 'raffle')
 
     def raffle(self, obj):
         return mark_safe( f'<a role="button"><button class="btn btn-primary"> Жеребьевка </button></a>' )

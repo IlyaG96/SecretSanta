@@ -1,3 +1,4 @@
+import jsonfield
 from django.db import models
 
 class Profile(models.Model):
@@ -22,15 +23,10 @@ class Profile(models.Model):
 
 
 class Game(models.Model):
-    profile = models.ForeignKey(
-        to='santa_bot.Profile',
-        verbose_name='Профиль',
-        on_delete=models.PROTECT,
-    )
     name = models.CharField(max_length = 256)
-
+    participants = jsonfield.JSONField(default=0)
     price_limit_status = models.BooleanField(default=False,
-        verbose_name='Есть лимит'
+        verbose_name='Безлимит'
     )
     price_limit = models.CharField(max_length = 256, default = 'Золотая карта')
     creator_chat_id = models.CharField(max_length = 256, default=None)
