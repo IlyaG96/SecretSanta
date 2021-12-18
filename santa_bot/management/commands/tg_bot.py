@@ -62,7 +62,7 @@ def start(update, context):
 
 
 def chose_game_name(update, context):
-    text = 'Введите название игры (не менее 7 латинских букв и цифр без пробелов)'
+    text = 'Введите название игры'
 
     update.message.reply_text(
         text,
