@@ -217,7 +217,7 @@ def start_santa_game(update, context):
     game_name = game['name']
     context.user_data['game_name'] = game_name
 
-    if chat_id == game['participants'].get(chat_id):
+    if str(chat_id) in game['participants']:
         keyboard = [
             ['Информация об игре'],
             ['Просмотреть виш-листы других участников'],
@@ -396,8 +396,17 @@ def add_guest_to_database(update, context):
     )
 
 
-def registred_participants(update, context):
-    pass
+def registered_participants(update, context):
+
+    game = Game.objects.all().get(game_hash__exact=context.user_data['game_hash'])
+
+    participants = game['participants'].keys()
+    print(participants)
+    for participant in participants:
+        wish = game['participants'][participant]
+        print(wish)
+
+
 
 
 class Command(BaseCommand):
@@ -418,7 +427,7 @@ class Command(BaseCommand):
                     MessageHandler(Filters.regex('^Создать игру$'), chose_game_name),
                 ],
                 GAME_NAME: [
-                    MessageHandler(Filters.regex('^[a-zA-Z0-9_].{7,99}$'), chose_game_price),
+                    MessageHandler(Filters.regex('^.{7,20}$'), chose_game_price),
                     MessageHandler(Filters.text, chose_game_name)
                 ],
                 GAME_PRICE: [
@@ -467,8 +476,8 @@ class Command(BaseCommand):
 
                 # registered branch
                 REGISTERED_GAME_VIEW: [
-                    MessageHandler(Filters.regex('^Информация об игре$'), registred_participants),
-                    MessageHandler(Filters.regex('^Просмотреть виш-листы других участников$'), registred_participants)
+                    MessageHandler(Filters.regex('^Информация об игре$'), registered_participants),
+                    MessageHandler(Filters.regex('^Просмотреть виш-листы других участников$'), registered_participants)
                 ]
             },
             fallbacks=[CommandHandler('start', start), MessageHandler(Filters.regex('^Начать$'), start)],
