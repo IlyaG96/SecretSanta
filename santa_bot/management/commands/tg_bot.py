@@ -694,8 +694,9 @@ class Command(BaseCommand):
 
             },
             fallbacks=[CommandHandler('start', start), MessageHandler(Filters.regex('^Начать$'), start)],
-            per_user=False,
-            per_chat=True
+            per_user=True,
+            per_chat=True,
+            allow_reentry=True
         )
         dispatcher.add_handler(conv_handler)
         updater.start_polling()
