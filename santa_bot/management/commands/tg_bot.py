@@ -454,11 +454,13 @@ def correct_name(update, context):
 
 def rewrite_name(update, context):
 
-    new_name = update.message.context
+    new_name = update.message.text
     game = Game.objects.get(game_hash=context.user_data['game_hash'])
     chat_id = str(context.user_data['chat_id'])
-    game.participants.chat_id.name = new_name
+    game.participants[chat_id]['name'] = new_name
     game.save()
+
+    return correct_guest_data(update, context)
 
 
 def correct_wishlist(update, context):
@@ -480,7 +482,14 @@ def correct_wishlist(update, context):
 
 
 def rewrite_wishlist(update, context):
-    pass
+
+    new_wishlist = update.message.text
+    game = Game.objects.get(game_hash=context.user_data['game_hash'])
+    chat_id = str(context.user_data['chat_id'])
+    game.participants[chat_id]['wishlist'] = new_wishlist
+    game.save()
+
+    return correct_guest_data(update, context)
 
 
 def correct_email(update, context):
@@ -502,7 +511,14 @@ def correct_email(update, context):
 
 
 def rewrite_email(update, context):
-    pass
+
+    new_email = update.message.text
+    game = Game.objects.get(game_hash=context.user_data['game_hash'])
+    chat_id = str(context.user_data['chat_id'])
+    game.participants[chat_id]['email'] = new_email
+    game.save()
+
+    return correct_guest_data(update, context)
 
 
 def correct_letter(update, context):
@@ -524,7 +540,14 @@ def correct_letter(update, context):
 
 
 def rewrite_letter(update, context):
-    pass
+
+    new_message_for_Santa = update.message.text
+    game = Game.objects.get(game_hash=context.user_data['game_hash'])
+    chat_id = str(context.user_data['chat_id'])
+    game.participants[chat_id]['message_for_Santa'] = new_message_for_Santa
+    game.save()
+
+    return correct_guest_data(update, context)
 
 
 def perform_raffle(game_name):
