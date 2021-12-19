@@ -403,36 +403,104 @@ def registered_participants(update, context):
 def correct_guest_data(update, context):
 
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
-    keyboard = [['Назад ⬅'], ['Исправить имя'], ['Исправить желание'], ['Исправить e-mail'], ['Исправить письмо Санте']]
-    participants = game['participants'].keys()
-    for participant in participants:
-        wish = game['participants'][participant]["wishlist"]
-        update.message.reply_text(
-            f'А вот и пожелания участников:\n'
-            f'{participant} хочет {wish} \n',
-            reply_markup=ReplyKeyboardMarkup(
-                keyboard,
-                resize_keyboard=True
-        ))
+    keyboard = [['Назад ⬅'],
+                ['Исправить имя'],
+                ['Исправить желание'],
+                ['Исправить e-mail'],
+                ['Исправить письмо Санте']]
+    chat_id = context.user_data['chat_id']
+    participant = game.participants[chat_id]
+
+    name = participant['name']
+    wishlist = participant['wishlist']
+    email = participant['email']
+    message_for_Santa = participant['message_for_Santa']
+
+    update.message.reply_text(
+        f'Сейчас о тебе сохранены следующие данные:\n'
+        f'Тебя зовут: {name}\n'
+        f'Твое желание на Новый Год: {wishlist}\n'
+        f'Твоя электронная почта: {email}\n'
+        f'Твое послание Санте: {message_for_Santa}\n',
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True
+    ))
 
     return REGISTERED_CORRECT_DATA
 
 
 def correct_name(update, context):
-    return REGISTERED_CORRECT_DATA
+
+    keyboard = [['Назад ⬅']]
+    game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
+    chat_id = context.user_data['chat_id']
+    participant = game.participants[chat_id]
+    name = participant['name']
+    update.message.reply_text(
+        f'Исправлю имя без регистрации и смс. Только для тебя:\n'
+        f'Текущее имя: {name} \n'
+        f'Напечатай, пожалуйста, новое имя:',
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True
+        ))
+
+    return REGISTERED_CORRECT_DATA_ACCEPT
 
 
 def correct_wishlist(update, context):
-    return REGISTERED_CORRECT_DATA
+
+    keyboard = [['Назад ⬅']]
+    game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
+    chat_id = context.user_data['chat_id']
+    participant = game.participants[chat_id]
+    wishlist = participant['wishlist']
+    update.message.reply_text(
+        f'Текущее желание: {wishlist} \n'
+        f'Напечатай, пожалуйста, новое:',
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True
+        ))
+
+    return REGISTERED_CORRECT_DATA_ACCEPT
 
 
 def correct_email(update, context):
-    return REGISTERED_CORRECT_DATA
+
+    keyboard = [['Назад ⬅']]
+    game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
+    chat_id = context.user_data['chat_id']
+    participant = game.participants[chat_id]
+    email = participant['email']
+    update.message.reply_text(
+        f'Текущий e-mail: {email} \n'
+        f'Напечатай, пожалуйста, новый:',
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True
+        ))
+
+    return REGISTERED_CORRECT_DATA_ACCEPT
 
 
 def correct_letter(update, context):
-    return REGISTERED_CORRECT_DATA
 
+    keyboard = [['Назад ⬅']]
+    game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
+    chat_id = context.user_data['chat_id']
+    participant = game.participants[chat_id]
+    message_for_Santa = participant['message_for_Santa']
+    update.message.reply_text(
+        f'Текущее послание Санте: {message_for_Santa} \n'
+        f'Напечатай, пожалуйста, новое:',
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True
+        ))
+
+    return REGISTERED_CORRECT_DATA_ACCEPT
 
 
 def perform_raffle(game_name):
