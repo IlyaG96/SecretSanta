@@ -1,5 +1,5 @@
 # @SecretSanta_bot
-import random
+import telegram
 from environs import Env
 from hashlib import sha1
 
@@ -8,7 +8,6 @@ from santa_bot.models import Profile, Game
 from telegram.utils import helpers
 
 import logging
-from datetime import datetime
 
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
@@ -26,8 +25,8 @@ logger = logging.getLogger(__name__)
 
 GAME_NAME, GAME_PRICE, GAME_REG_ENDS, GAME_BUILD, GAME_GIFT_DATE, GAME_CONFIRMATION = range(6)
 REGISTERED_GAME_VIEW, ADMIN_PARTICIPANTS, REGISTERED_CORRECT_DATA, \
-    REGISTERED_CORRECT_NAME_ACCEPT, REGISTERED_CORRECT_WISH_ACCEPT, \
-    REGISTERED_CORRECT_EMAIL_ACCEPT, REGISTERED_CORRECT_LETTER_ACCEPT = range(10, 17)
+REGISTERED_CORRECT_NAME_ACCEPT, REGISTERED_CORRECT_WISH_ACCEPT, \
+REGISTERED_CORRECT_EMAIL_ACCEPT, REGISTERED_CORRECT_LETTER_ACCEPT = range(10, 17)
 GUEST_COLLECT_NAME, GUEST_COLLECT_WISH, GUEST_COLLECT_MAIL, GUEST_COLLECT_LETTER, GUEST_COLLECT_END = range(20, 25)
 SANTA_GAME = 'share-link-with-game-id'
 
@@ -139,7 +138,6 @@ def chose_game_gift_date_back(update, context):
 
 
 def game_confirmation(update, context):
-
     if update.message.text != 'Назад ⬅':
 
         if update.message.text < context.user_data['registration_date']:
@@ -361,7 +359,6 @@ def collect_guest_end(update, context):
 
 
 def add_guest_to_database(update, context):
-
     game = Game.objects.get(game_hash=context.user_data['game_hash'])
 
     chat_id = context.user_data['chat_id']
@@ -390,7 +387,6 @@ def add_guest_to_database(update, context):
 
 
 def registered_participants(update, context):
-
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
     # need to add "back button"
     participants = game['participants'].keys()
@@ -404,7 +400,6 @@ def registered_participants(update, context):
 
 
 def correct_guest_data(update, context):
-
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
     keyboard = [['Назад ⬅'],
                 ['Исправить имя'],
@@ -428,13 +423,12 @@ def correct_guest_data(update, context):
         reply_markup=ReplyKeyboardMarkup(
             keyboard,
             resize_keyboard=True
-    ))
+        ))
 
     return REGISTERED_CORRECT_DATA
 
 
 def correct_name(update, context):
-
     keyboard = [['Назад ⬅']]
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
     chat_id = str(context.user_data['chat_id'])
@@ -453,7 +447,6 @@ def correct_name(update, context):
 
 
 def rewrite_name(update, context):
-
     new_name = update.message.text
     game = Game.objects.get(game_hash=context.user_data['game_hash'])
     chat_id = str(context.user_data['chat_id'])
@@ -464,7 +457,6 @@ def rewrite_name(update, context):
 
 
 def correct_wishlist(update, context):
-
     keyboard = [['Назад ⬅']]
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
     chat_id = str(context.user_data['chat_id'])
@@ -482,7 +474,6 @@ def correct_wishlist(update, context):
 
 
 def rewrite_wishlist(update, context):
-
     new_wishlist = update.message.text
     game = Game.objects.get(game_hash=context.user_data['game_hash'])
     chat_id = str(context.user_data['chat_id'])
@@ -493,7 +484,6 @@ def rewrite_wishlist(update, context):
 
 
 def correct_email(update, context):
-
     keyboard = [['Назад ⬅']]
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
     chat_id = str(context.user_data['chat_id'])
@@ -511,7 +501,6 @@ def correct_email(update, context):
 
 
 def rewrite_email(update, context):
-
     new_email = update.message.text
     game = Game.objects.get(game_hash=context.user_data['game_hash'])
     chat_id = str(context.user_data['chat_id'])
@@ -522,7 +511,6 @@ def rewrite_email(update, context):
 
 
 def correct_letter(update, context):
-
     keyboard = [['Назад ⬅']]
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
     chat_id = str(context.user_data['chat_id'])
@@ -540,7 +528,6 @@ def correct_letter(update, context):
 
 
 def rewrite_letter(update, context):
-
     new_message_for_Santa = update.message.text
     game = Game.objects.get(game_hash=context.user_data['game_hash'])
     chat_id = str(context.user_data['chat_id'])
@@ -550,33 +537,64 @@ def rewrite_letter(update, context):
     return correct_guest_data(update, context)
 
 
-def perform_raffle(game_name):
-    game = Game.objects.get(name=game_name)
-    gift_dispatch_date = game.gift_dispatch_date.strftime("%Y-%m-%d")
-    actual_date = datetime.now().strftime("%Y-%m-%d")
-    if gift_dispatch_date == actual_date:
-        all_participant = list(game.participants.keys())
-        participant_quantity = len(all_participant)
-        if participant_quantity != 1:
-            remains = participant_quantity % 2
-            if remains == 0:
-                half_of_participant_quantity = participant_quantity // 2
-                first_half_of_participants = all_participant[:half_of_participant_quantity]
-                second_half_of_participants = all_participant[half_of_participant_quantity:]
-                print(second_half_of_participants)
-                raffle_pairs = dict(zip(first_half_of_participants, second_half_of_participants))
-                print(raffle_pairs)
-            else:
-                half_of_participant_quantity = participant_quantity // 2
-                first_half_of_participants = all_participant[:half_of_participant_quantity]
-                second_half_of_participants = all_participant[half_of_participant_quantity:]
-                raffle_pairs = dict(zip(first_half_of_participants, second_half_of_participants))
-                raffle_pairs[all_participant[-1]] = all_participant[0]
-                print(raffle_pairs)
+def send_messages(raffle_pairs):
+    bot = telegram.Bot(token=telegram_token)
+    for participant1, participant2 in raffle_pairs.items():
+        first_participant = Profile.objects.get(external_id=participant1)
+        second_participant = Profile.objects.get(external_id=participant2)
+        bot.send_message(chat_id=participant1,
+                         text='Жеребьевка в игре “Тайный Санта” проведена! \n'
+                              'Спешу сообщить кто тебе выпал: \n'
+                              f'Имя: {second_participant.name} \n'
+                              f'Почта:{second_participant.email} \n'
+                              f'Интересы: {second_participant.wishlist} \n'
+                              f'Письмо Санте: {second_participant.message_for_Santa} \n'
+                         )
+        bot.send_message(chat_id=participant2,
+                         text='Жеребьевка в игре “Тайный Санта” проведена! \n'
+                              'Спешу сообщить кто тебе выпал: \n'
+                              f'Имя: {first_participant.name} \n'
+                              f'Почта:{first_participant.email} \n'
+                              f'Интересы: {first_participant.wishlist} \n'
+                              f'Письмо Санте: {first_participant.message_for_Santa} \n'
+                         )
 
-        else:
-            raffle_pairs = 'Одиночество - изнанка свободы.'
-            print(raffle_pairs)
+
+def perform_raffle():
+    games = Game.objects.all()
+    for game in games:
+        print(game.name)
+        registration_date = game.registration_date.strftime("%Y-%m-%d")
+        actual_date = '2021-12-31'
+        # actual_date = datetime.now().strftime("%Y-%m-%d")
+        if registration_date == actual_date:
+            print('hi')
+            all_participant = list(game.participants.keys())
+            participant_quantity = len(all_participant)
+            if participant_quantity != 1:
+                remains = participant_quantity % 2
+                if remains == 0:
+                    print('1')
+                    half_of_participant_quantity = participant_quantity // 2
+                    first_half_of_participants = all_participant[:half_of_participant_quantity]
+                    second_half_of_participants = all_participant[half_of_participant_quantity:]
+                    raffle_pairs = dict(zip(first_half_of_participants, second_half_of_participants))
+                    print(raffle_pairs)
+                    send_messages(raffle_pairs)
+                else:
+                    print('2')
+                    half_of_participant_quantity = participant_quantity // 2
+                    first_half_of_participants = all_participant[:half_of_participant_quantity]
+                    second_half_of_participants = all_participant[half_of_participant_quantity:]
+                    raffle_pairs = dict(zip(first_half_of_participants, second_half_of_participants))
+                    raffle_pairs[all_participant[-1]] = all_participant[0]
+                    print(raffle_pairs)
+                    test = send_messages(raffle_pairs)
+                    print(test)
+            else:
+                raffle_pairs = 'Одиночество - изнанка свободы.'
+                send_messages(raffle_pairs)
+                print(raffle_pairs)
 
 
 class Command(BaseCommand):

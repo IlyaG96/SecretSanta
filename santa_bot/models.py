@@ -37,4 +37,8 @@ class Game(models.Model):
         verbose_name = 'Игра'
         verbose_name_plural = 'Игры'
 
+class Raffle(models.Model):
+    raffle = models.CharField(max_length = 256)
+    class Meta:
+        verbose_name = 'Провести жеребьевку'
 # Create your models here.
