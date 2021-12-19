@@ -25,7 +25,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 GAME_NAME, GAME_PRICE, GAME_REG_ENDS, GAME_BUILD, GAME_GIFT_DATE, GAME_CONFIRMATION = range(6)
-REGISTERED_GAME_VIEW, ADMIN_PARTICIPANTS, REGISTERED_CORRECT_DATA, REGISTERED_CORRECT_DATA_ACCEPT = range(10, 14)
+REGISTERED_GAME_VIEW, ADMIN_PARTICIPANTS, REGISTERED_CORRECT_DATA, \
+    REGISTERED_CORRECT_NAME_ACCEPT, REGISTERED_CORRECT_WISH_ACCEPT, \
+    REGISTERED_CORRECT_EMAIL_ACCEPT, REGISTERED_CORRECT_LETTER_ACCEPT = range(10, 17)
 GUEST_COLLECT_NAME, GUEST_COLLECT_WISH, GUEST_COLLECT_MAIL, GUEST_COLLECT_LETTER, GUEST_COLLECT_END = range(20, 25)
 SANTA_GAME = 'share-link-with-game-id'
 
@@ -212,6 +214,7 @@ def start_santa_game(update, context):
         keyboard = [
             ['Информация об игре'],
             ['Просмотреть виш-листы других участников'],
+            ['Хочу поменять информацию о себе'],
         ]
         update.message.reply_text(
             f'Похоже, что ты уже зарегистрирован в игре {game_name}',
@@ -380,7 +383,7 @@ def add_guest_to_database(update, context):
     game.save()
 
     update.message.reply_text(
-        f'{game.gift_dispatch_date} мы проведем жеребьевку и ты узнаешь имя и контакты своего тайного друга. '
+        f'{game.gift_dispatch_date} мы проведем жеребьевку, и ты узнаешь имя и контакты своего тайного друга. '
         f'Ему и нужно будет подарить подарок!',
         reply_markup=ReplyKeyboardRemove()
     )
@@ -389,7 +392,7 @@ def add_guest_to_database(update, context):
 def registered_participants(update, context):
 
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
-
+    # need to add "back button"
     participants = game['participants'].keys()
     for participant in participants:
         wish = game['participants'][participant]["wishlist"]
@@ -408,8 +411,8 @@ def correct_guest_data(update, context):
                 ['Исправить желание'],
                 ['Исправить e-mail'],
                 ['Исправить письмо Санте']]
-    chat_id = context.user_data['chat_id']
-    participant = game.participants[chat_id]
+    chat_id = str(context.user_data['chat_id'])
+    participant = game['participants'][chat_id]
 
     name = participant['name']
     wishlist = participant['wishlist']
@@ -434,8 +437,8 @@ def correct_name(update, context):
 
     keyboard = [['Назад ⬅']]
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
-    chat_id = context.user_data['chat_id']
-    participant = game.participants[chat_id]
+    chat_id = str(context.user_data['chat_id'])
+    participant = game['participants'][chat_id]
     name = participant['name']
     update.message.reply_text(
         f'Исправлю имя без регистрации и смс. Только для тебя:\n'
@@ -446,15 +449,24 @@ def correct_name(update, context):
             resize_keyboard=True
         ))
 
-    return REGISTERED_CORRECT_DATA_ACCEPT
+    return REGISTERED_CORRECT_NAME_ACCEPT
+
+
+def rewrite_name(update, context):
+
+    new_name = update.message.context
+    game = Game.objects.get(game_hash=context.user_data['game_hash'])
+    chat_id = str(context.user_data['chat_id'])
+    game.participants.chat_id.name = new_name
+    game.save()
 
 
 def correct_wishlist(update, context):
 
     keyboard = [['Назад ⬅']]
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
-    chat_id = context.user_data['chat_id']
-    participant = game.participants[chat_id]
+    chat_id = str(context.user_data['chat_id'])
+    participant = game['participants'][chat_id]
     wishlist = participant['wishlist']
     update.message.reply_text(
         f'Текущее желание: {wishlist} \n'
@@ -464,15 +476,19 @@ def correct_wishlist(update, context):
             resize_keyboard=True
         ))
 
-    return REGISTERED_CORRECT_DATA_ACCEPT
+    return REGISTERED_CORRECT_WISH_ACCEPT
+
+
+def rewrite_wishlist(update, context):
+    pass
 
 
 def correct_email(update, context):
 
     keyboard = [['Назад ⬅']]
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
-    chat_id = context.user_data['chat_id']
-    participant = game.participants[chat_id]
+    chat_id = str(context.user_data['chat_id'])
+    participant = game['participants'][chat_id]
     email = participant['email']
     update.message.reply_text(
         f'Текущий e-mail: {email} \n'
@@ -482,15 +498,19 @@ def correct_email(update, context):
             resize_keyboard=True
         ))
 
-    return REGISTERED_CORRECT_DATA_ACCEPT
+    return REGISTERED_CORRECT_EMAIL_ACCEPT
+
+
+def rewrite_email(update, context):
+    pass
 
 
 def correct_letter(update, context):
 
     keyboard = [['Назад ⬅']]
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
-    chat_id = context.user_data['chat_id']
-    participant = game.participants[chat_id]
+    chat_id = str(context.user_data['chat_id'])
+    participant = game['participants'][chat_id]
     message_for_Santa = participant['message_for_Santa']
     update.message.reply_text(
         f'Текущее послание Санте: {message_for_Santa} \n'
@@ -500,7 +520,11 @@ def correct_letter(update, context):
             resize_keyboard=True
         ))
 
-    return REGISTERED_CORRECT_DATA_ACCEPT
+    return REGISTERED_CORRECT_LETTER_ACCEPT
+
+
+def rewrite_letter(update, context):
+    pass
 
 
 def perform_raffle(game_name):
@@ -601,9 +625,8 @@ class Command(BaseCommand):
                 REGISTERED_GAME_VIEW: [
                     MessageHandler(Filters.regex('^Информация об игре (в разработке)$'), registered_participants),
                     MessageHandler(Filters.regex('^Просмотреть виш-листы других участников$'), registered_participants),
-                    MessageHandler(Filters.regex('^Хочу поменять $'), correct_guest_data)
+                    MessageHandler(Filters.regex('^Хочу поменять информацию о себе$'), correct_guest_data)
                 ],
-
                 REGISTERED_CORRECT_DATA: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), start_santa_game),
                     MessageHandler(Filters.regex('^Исправить имя$'), correct_name),
@@ -611,13 +634,23 @@ class Command(BaseCommand):
                     MessageHandler(Filters.regex('^Исправить e-mail$'), correct_email),
                     MessageHandler(Filters.regex('^Исправить письмо Санте$'), correct_letter)
                 ],
-
-                REGISTERED_CORRECT_DATA_ACCEPT: [
+                REGISTERED_CORRECT_NAME_ACCEPT: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), correct_guest_data),
-                    MessageHandler(Filters.text, correct_guest_data)
+                    MessageHandler(Filters.text, rewrite_name)
+                ],
+                REGISTERED_CORRECT_WISH_ACCEPT: [
+                    MessageHandler(Filters.regex('^Назад ⬅$'), correct_guest_data),
+                    MessageHandler(Filters.text, rewrite_wishlist)
+                ],
+                REGISTERED_CORRECT_EMAIL_ACCEPT: [
+                    MessageHandler(Filters.regex('^Назад ⬅$'), correct_guest_data),
+                    MessageHandler(Filters.text, rewrite_email)
+                ],
+                REGISTERED_CORRECT_LETTER_ACCEPT: [
+                    MessageHandler(Filters.regex('^Назад ⬅$'), correct_guest_data),
+                    MessageHandler(Filters.text, rewrite_letter)
+                ],
 
-
-                ]
             },
             fallbacks=[CommandHandler('start', start), MessageHandler(Filters.regex('^Начать$'), start)],
             per_user=False,
