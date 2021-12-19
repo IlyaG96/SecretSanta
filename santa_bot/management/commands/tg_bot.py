@@ -1,26 +1,17 @@
 # @SecretSanta_bot
-import telegram
-import json
 import random
 from environs import Env
 from hashlib import sha1
 
 from django.core.management.base import BaseCommand
-from django.db.models import F
 from santa_bot.models import Profile, Game
 from telegram.utils import helpers
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update, KeyboardButton
-from telegram.ext import (
-    Updater,
-    CommandHandler,
-    MessageHandler,
-    Filters,
-    ConversationHandler,
-)
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 
 env = Env()
 env.read_env()
@@ -33,18 +24,10 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-(
-    GAME_NAME,
-    GAME_PRICE,
-    GAME_REG_ENDS,
-    GAME_BUILD,
-    GAME_GIFT_DATE,
-    GAME_CONFIRMATION,
-) = range(6)
-REGISTERED_GAME_VIEW, ADMIN_PARTICIPANTS = range(10, 12)
+GAME_NAME, GAME_PRICE, GAME_REG_ENDS, GAME_BUILD, GAME_GIFT_DATE, GAME_CONFIRMATION = range(6)
+REGISTERED_GAME_VIEW, ADMIN_PARTICIPANTS, REGISTERED_CORRECT_DATA, REGISTERED_CORRECT_DATA_ACCEPT = range(10, 14)
 GUEST_COLLECT_NAME, GUEST_COLLECT_WISH, GUEST_COLLECT_MAIL, GUEST_COLLECT_LETTER, GUEST_COLLECT_END = range(20, 25)
 SANTA_GAME = 'share-link-with-game-id'
-IN_GAME = 'in-game'
 
 
 def start(update, context):
@@ -420,15 +403,36 @@ def registered_participants(update, context):
 def correct_guest_data(update, context):
 
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
-
+    keyboard = [['Назад ⬅'], ['Исправить имя'], ['Исправить желание'], ['Исправить e-mail'], ['Исправить письмо Санте']]
     participants = game['participants'].keys()
     for participant in participants:
         wish = game['participants'][participant]["wishlist"]
         update.message.reply_text(
             f'А вот и пожелания участников:\n'
             f'{participant} хочет {wish} \n',
-            reply_markup=ReplyKeyboardRemove()
-        )
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard,
+                resize_keyboard=True
+        ))
+
+    return REGISTERED_CORRECT_DATA
+
+
+def correct_name(update, context):
+    return REGISTERED_CORRECT_DATA
+
+
+def correct_wishlist(update, context):
+    return REGISTERED_CORRECT_DATA
+
+
+def correct_email(update, context):
+    return REGISTERED_CORRECT_DATA
+
+
+def correct_letter(update, context):
+    return REGISTERED_CORRECT_DATA
+
 
 
 def perform_raffle(game_name):
@@ -530,6 +534,21 @@ class Command(BaseCommand):
                     MessageHandler(Filters.regex('^Информация об игре (в разработке)$'), registered_participants),
                     MessageHandler(Filters.regex('^Просмотреть виш-листы других участников$'), registered_participants),
                     MessageHandler(Filters.regex('^Хочу поменять $'), correct_guest_data)
+                ],
+
+                REGISTERED_CORRECT_DATA: [
+                    MessageHandler(Filters.regex('^Назад ⬅$'), start_santa_game),
+                    MessageHandler(Filters.regex('^Исправить имя$'), correct_name),
+                    MessageHandler(Filters.regex('^Исправить желание$'), correct_wishlist),
+                    MessageHandler(Filters.regex('^Исправить e-mail$'), correct_email),
+                    MessageHandler(Filters.regex('^Исправить письмо Санте$'), correct_letter)
+                ],
+
+                REGISTERED_CORRECT_DATA_ACCEPT: [
+                    MessageHandler(Filters.regex('^Назад ⬅$'), correct_guest_data),
+                    MessageHandler(Filters.text, correct_guest_data)
+
+
                 ]
             },
             fallbacks=[CommandHandler('start', start), MessageHandler(Filters.regex('^Начать$'), start)],
