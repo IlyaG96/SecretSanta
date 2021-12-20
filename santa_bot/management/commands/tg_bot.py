@@ -75,7 +75,7 @@ def chose_game_price(update, context):
             return chose_game_name(update, context)
 
     game_name = context.user_data['game_name']
-    text = f"Для игры {game_name} будет ограничение по стоимости?"
+    text = f"Для игры '{game_name}' будет ограничение по стоимости?"
     keyboard = [
         ['Без ограничения по стоимости'],
         ['До 500 рублей'],
@@ -104,7 +104,7 @@ def chose_game_reg_ends(update, context):
 
     game_name = context.user_data['game_name']
 
-    text = f'Последний день регистрации в игре {game_name} это:'
+    text = f'Последний день регистрации в игре "{game_name}" это:'
     keyboard = [
         ['2021-12-25'],
         ['2021-12-31'],
