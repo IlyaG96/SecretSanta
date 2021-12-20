@@ -218,11 +218,11 @@ def start_santa_game(update, context):
     context.user_data['chat_id'] = update.message.chat_id
     chat_id = context.user_data['chat_id']
     game = Game.objects.all().values().get(game_hash__exact=game_hash)
-
+    profile = Profile.objects.get(external_id=chat_id)
     game_name = game['name']
     context.user_data['game_name'] = game_name
 
-    if str(chat_id) in game['participants']:
+    if str(chat_id) in game['participants'] or str(chat_id) in profile.external_id:
         keyboard = [
             ['Информация об игре'],
             ['Просмотреть виш-листы других участников'],
@@ -622,7 +622,8 @@ def perform_raffle():
     games = Game.objects.all()
     for game in games:
         registration_date = game.registration_date.strftime("%Y-%m-%d")
-        actual_date = datetime.now().strftime("%Y-%m-%d")
+        actual_date = '2021-12-30'
+        #actual_date = datetime.now().strftime("%Y-%m-%d")
         if registration_date == actual_date:
             all_participant = list(game.participants.keys())
             participant_quantity = len(all_participant)
