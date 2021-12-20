@@ -374,20 +374,26 @@ def collect_guest_end(update, context):
 
 
 def add_guest_to_database(update, context):
-    game = Game.objects.get(game_hash=context.user_data['game_hash'])
 
     chat_id = context.user_data['chat_id']
+    game = Game.objects.get(game_hash=context.user_data['game_hash'])
+    profile = Profile.objects.get(external_id=chat_id)
+
     name = context.user_data['first_name']
     wish = context.user_data['wish']
     mail = context.user_data['mail']
     letter = context.user_data['letter']
-    participant, _ = Profile.objects.get_or_create(
-        external_id=chat_id,
-        name=name,
-        email=mail,
-        wishlist=wish,
-        message_for_Santa=letter,
-    )
+    print(profile.external_id)
+
+    if not chat_id == profile.external_id:
+
+        participant, _ = Profile.objects.get_or_create(
+            external_id=chat_id,
+            name=name,
+            email=mail,
+            wishlist=wish,
+            message_for_Santa=letter,
+        )
 
     game.participants.update({
         chat_id: {"name": name, "email": mail, "wishlist": wish, "message_for_Santa": letter
@@ -621,7 +627,8 @@ def perform_raffle():
     games = Game.objects.all()
     for game in games:
         registration_date = game.registration_date.strftime("%Y-%m-%d")
-        actual_date = datetime.now().strftime("%Y-%m-%d")
+        actual_date = 2021-12-26
+        #actual_date = datetime.now().strftime("%Y-%m-%d")
         if registration_date == actual_date:
             all_participant = list(game.participants.keys())
             participant_quantity = len(all_participant)
