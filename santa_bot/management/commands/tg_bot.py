@@ -377,15 +377,20 @@ def add_guest_to_database(update, context):
 
     chat_id = context.user_data['chat_id']
     game = Game.objects.get(game_hash=context.user_data['game_hash'])
-    profile = Profile.objects.get(external_id=chat_id)
+
 
     name = context.user_data['first_name']
     wish = context.user_data['wish']
     mail = context.user_data['mail']
     letter = context.user_data['letter']
-    print(profile.external_id)
+    try:
+        profile = Profile.objects.get(external_id=chat_id)
+        external_id = profile.external_id
+    except Exception:
 
-    if not chat_id == profile.external_id:
+        external_id = None
+
+    if not chat_id == external_id:
 
         participant, _ = Profile.objects.get_or_create(
             external_id=chat_id,
