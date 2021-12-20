@@ -396,17 +396,45 @@ def add_guest_to_database(update, context):
     )
 
 
+def registered_game_display(update, context):
+    game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
+    keyboard = [
+        ['Просмотреть виш-листы других участников'],
+        ['Хочу поменять информацию о себе'],
+    ]
+    update.message.reply_text(
+        f'Информация об игре "Тайный Санта"\n'
+        f'Название твоей игры: {game["name"]}\n'
+        f'Подарки должны стоить: {game["price_limit"]}\n'
+        f'Последний день для регистрации: {game["registration_date"]}\n'
+        f'А подарочки вручим вот когда: {game["gift_dispatch_date"]}\n',
+
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True,
+        )
+    )
+
+    return REGISTERED_GAME_VIEW
+
+
+
 def registered_participants(update, context):
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
-    # need to add "back button"
+    keyboard = [['Назад ⬅']]
     participants = game['participants'].keys()
     for participant in participants:
         wish = game['participants'][participant]["wishlist"]
         update.message.reply_text(
             f'А вот и пожелания участников:\n'
-            f'{participant} хочет {wish} \n',
-            reply_markup=ReplyKeyboardRemove()
+            f'Участник "{participant}" хочет "{wish}" \n',
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard,
+                resize_keyboard=True,
+            )
         )
+
+    return REGISTERED_GAME_VIEW
 
 
 def correct_guest_data(update, context):
@@ -674,12 +702,13 @@ class Command(BaseCommand):
 
                 # registered branch
                 REGISTERED_GAME_VIEW: [
-                    MessageHandler(Filters.regex('^Информация об игре (в разработке)$'), registered_participants),
+                    MessageHandler(Filters.regex('^Информация об игре$'), registered_game_display),
                     MessageHandler(Filters.regex('^Просмотреть виш-листы других участников$'), registered_participants),
-                    MessageHandler(Filters.regex('^Хочу поменять информацию о себе$'), correct_guest_data)
+                    MessageHandler(Filters.regex('^Хочу поменять информацию о себе$'), correct_guest_data),
+                    MessageHandler(Filters.regex('^Назад ⬅$'), registered_game_display)
                 ],
                 REGISTERED_CORRECT_DATA: [
-                    MessageHandler(Filters.regex('^Назад ⬅$'), start_santa_game),
+                    MessageHandler(Filters.regex('^Назад ⬅$'), registered_game_display),
                     MessageHandler(Filters.regex('^Исправить имя$'), correct_name),
                     MessageHandler(Filters.regex('^Исправить желание$'), correct_wishlist),
                     MessageHandler(Filters.regex('^Исправить e-mail$'), correct_email),
