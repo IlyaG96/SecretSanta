@@ -260,14 +260,13 @@ def collect_guest_name(update, context):
     context.user_data['first_name'] = first_name
 
     keyboard = [
-        ['Ввести полное ФИО (в разаработке)'],
         ['Подтвердить'],
-        ['Назад ⬅ (в разработке)']
     ]
     update.message.reply_text(
         f'Отлично. Для начала, давай познакомимся\n'
         f'Имя, взятое из твоего профиля\n'
-        f'Имя: {first_name}\n',
+        f'{first_name}\n'
+        f'Если это не ты, то напиши свое имя и отправь его',
         reply_markup=ReplyKeyboardMarkup(
             keyboard,
             resize_keyboard=True,
@@ -287,6 +286,9 @@ def collect_guest_wish(update, context):
         user = update.message.from_user
         first_name = user.first_name
         context.user_data['first_name'] = first_name
+        if update.message.text != 'Подтвердить':
+            first_name = update.message.text
+            context.user_data['first_name'] = first_name
 
     update.message.reply_text(
         f'Теперь твое желание!',
@@ -674,7 +676,8 @@ class Command(BaseCommand):
                 GUEST_COLLECT_NAME: [
                     MessageHandler(Filters.regex('^Ура! Сейчас я расскажу, что хочу получить на Новый Год!$'),
                                    collect_guest_name),
-                    MessageHandler(Filters.regex('^Подтвердить$'), collect_guest_wish)
+                    MessageHandler(Filters.regex('^Подтвердить$'), collect_guest_wish),
+                    MessageHandler(Filters.regex(r'[а-яА-Я]{2,40}$'), collect_guest_wish)
                 ],
                 GUEST_COLLECT_WISH: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_name_back),
