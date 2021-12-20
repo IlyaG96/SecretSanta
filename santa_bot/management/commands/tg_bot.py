@@ -11,7 +11,6 @@ from telegram.utils import helpers
 
 import logging
 
-from validate_email import validate_email
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 
