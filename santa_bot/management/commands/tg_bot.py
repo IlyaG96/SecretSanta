@@ -683,9 +683,8 @@ class Command(BaseCommand):
                 GUEST_COLLECT_MAIL: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_wish_back),
                     MessageHandler(Filters.regex(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'),
-                                   correct_email),
-                    MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_wish_back),
-
+                                   collect_guest_letter),
+                    MessageHandler(Filters.text, collect_guest_mail),
                 ],
                 GUEST_COLLECT_LETTER: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_mail_back),
