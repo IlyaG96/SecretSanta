@@ -393,7 +393,7 @@ def add_guest_to_database(update, context):
     game.save()
 
     update.message.reply_text(
-        f'{game.gift_dispatch_date} мы проведем жеребьевку, и ты узнаешь имя и контакты своего тайного друга. '
+        f'{game.registration_date} мы проведем жеребьевку, и ты узнаешь имя и контакты своего тайного друга. '
         f'Ему и нужно будет подарить подарок!',
         reply_markup=ReplyKeyboardRemove()
     )
