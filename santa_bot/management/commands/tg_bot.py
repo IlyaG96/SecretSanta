@@ -421,7 +421,6 @@ def registered_game_display(update, context):
     return REGISTERED_GAME_VIEW
 
 
-
 def registered_participants(update, context):
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
     keyboard = [['Назад ⬅']]
@@ -430,7 +429,7 @@ def registered_participants(update, context):
         wish = game['participants'][participant]["wishlist"]
         update.message.reply_text(
             f'А вот и пожелания участников:\n'
-            f'Участник "{participant}" хочет "{wish}" \n',
+            f'Участник "{participant["name"]}" хочет "{wish}" \n',
             reply_markup=ReplyKeyboardMarkup(
                 keyboard,
                 resize_keyboard=True,
@@ -683,7 +682,10 @@ class Command(BaseCommand):
                 ],
                 GUEST_COLLECT_MAIL: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_wish_back),
-                    MessageHandler(Filters.text, collect_guest_letter)
+                    MessageHandler(Filters.regex(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'),
+                                   correct_email),
+                    MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_wish_back),
+
                 ],
                 GUEST_COLLECT_LETTER: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_mail_back),
@@ -718,7 +720,8 @@ class Command(BaseCommand):
                 ],
                 REGISTERED_CORRECT_EMAIL_ACCEPT: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), correct_guest_data),
-                    MessageHandler(Filters.text, rewrite_email)
+                    MessageHandler(Filters.regex(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'), rewrite_email),
+                    MessageHandler(Filters.text, correct_email)
                 ],
                 REGISTERED_CORRECT_LETTER_ACCEPT: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), correct_guest_data),
