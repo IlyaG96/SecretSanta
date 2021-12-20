@@ -1,5 +1,7 @@
 # @SecretSanta_bot
 import telegram
+import re
+from datetime import datetime
 from environs import Env
 from hashlib import sha1
 
@@ -62,9 +64,19 @@ def chose_game_name(update, context):
 def chose_game_price(update, context):
     if update.message.text != 'Назад ⬅':
         context.user_data['game_name'] = update.message.text
+        try:
+            game = Game.objects.all().values().get(name__exact=context.user_data['game_name'])
+        except Exception:
+            game = None
+        if game:
+            game_name = context.user_data['game_name']
+            update.message.reply_text(
+                f'Похоже название "{game_name}" уже занято. Попробуйте ввести другое'
+            )
+            return chose_game_name(update, context)
 
     game_name = context.user_data['game_name']
-    text = f"Для игры {game_name} будет ограничение по стоимости?"
+    text = f"Для игры '{game_name}' будет ограничение по стоимости?"
     keyboard = [
         ['Без ограничения по стоимости'],
         ['До 500 рублей'],
@@ -93,7 +105,7 @@ def chose_game_reg_ends(update, context):
 
     game_name = context.user_data['game_name']
 
-    text = f'Последний день регистрации в игре {game_name} это:'
+    text = f'Последний день регистрации в игре "{game_name}" это:'
     keyboard = [
         ['2021-12-25'],
         ['2021-12-31'],
@@ -115,12 +127,13 @@ def chose_game_reg_ends_back(update, context):
 
 
 def chose_game_gift_date(update, context):
-    if update.message.text != 'Назад ⬅':
+    if update.message.text != 'Назад ⬅' and\
+            re.match("\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])*", update.message.text):
         context.user_data['registration_date'] = update.message.text
 
     keyboard = [['Назад ⬅']]
     text = f'Введите день, в который планируется дарить подарки, в формате 2021-12-29:\n' \
-           f'Помните, что день, в который планируется дарить подарки, не может наступить позже дня ' \
+           f'Помните, что день, в который планируется дарить подарки, должен наступить позже дня ' \
            f'окончания регистрации {context.user_data["registration_date"]}'
 
     update.message.reply_text(
@@ -248,14 +261,13 @@ def collect_guest_name(update, context):
     context.user_data['first_name'] = first_name
 
     keyboard = [
-        ['Ввести полное ФИО (в разаработке)'],
         ['Подтвердить'],
-        ['Назад ⬅ (в разработке)']
     ]
     update.message.reply_text(
         f'Отлично. Для начала, давай познакомимся\n'
         f'Имя, взятое из твоего профиля\n'
-        f'Имя: {first_name}\n',
+        f'{first_name}\n'
+        f'Если это не ты, то напиши свое имя и отправь его',
         reply_markup=ReplyKeyboardMarkup(
             keyboard,
             resize_keyboard=True,
@@ -275,6 +287,9 @@ def collect_guest_wish(update, context):
         user = update.message.from_user
         first_name = user.first_name
         context.user_data['first_name'] = first_name
+        if update.message.text != 'Подтвердить':
+            first_name = update.message.text
+            context.user_data['first_name'] = first_name
 
     update.message.reply_text(
         f'Теперь твое желание!',
@@ -381,23 +396,50 @@ def add_guest_to_database(update, context):
     game.save()
 
     update.message.reply_text(
-        f'{game.gift_dispatch_date} мы проведем жеребьевку, и ты узнаешь имя и контакты своего тайного друга. '
+        f'{game.registration_date} мы проведем жеребьевку, и ты узнаешь имя и контакты своего тайного друга. '
         f'Ему и нужно будет подарить подарок!',
         reply_markup=ReplyKeyboardRemove()
     )
 
 
+def registered_game_display(update, context):
+    game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
+    keyboard = [
+        ['Просмотреть виш-листы других участников'],
+        ['Хочу поменять информацию о себе'],
+    ]
+    update.message.reply_text(
+        f'Информация об игре "Тайный Санта"\n'
+        f'Название твоей игры: {game["name"]}\n'
+        f'Подарки должны стоить: {game["price_limit"]}\n'
+        f'Последний день для регистрации: {game["registration_date"]}\n'
+        f'А подарочки вручим вот когда: {game["gift_dispatch_date"]}\n',
+
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard,
+            resize_keyboard=True,
+        )
+    )
+
+    return REGISTERED_GAME_VIEW
+
+
 def registered_participants(update, context):
     game = Game.objects.all().values().get(game_hash__exact=context.user_data['game_hash'])
-    # need to add "back button"
+    keyboard = [['Назад ⬅']]
     participants = game['participants'].keys()
     for participant in participants:
         wish = game['participants'][participant]["wishlist"]
         update.message.reply_text(
             f'А вот и пожелания участников:\n'
-            f'{participant} хочет {wish} \n',
-            reply_markup=ReplyKeyboardRemove()
+            f'Участник "{participant["name"]}" хочет "{wish}" \n',
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard,
+                resize_keyboard=True,
+            )
         )
+
+    return REGISTERED_GAME_VIEW
 
 
 def correct_guest_data(update, context):
@@ -580,8 +622,7 @@ def perform_raffle():
     games = Game.objects.all()
     for game in games:
         registration_date = game.registration_date.strftime("%Y-%m-%d")
-        actual_date = '2021-12-30'
-        # actual_date = datetime.now().strftime("%Y-%m-%d")
+        actual_date = datetime.now().strftime("%Y-%m-%d")
         if registration_date == actual_date:
             all_participant = list(game.participants.keys())
             participant_quantity = len(all_participant)
@@ -605,6 +646,7 @@ def perform_raffle():
                 send_messages(all_participant)
 
 
+
 class Command(BaseCommand):
     help = 'Телеграм-бот'
 
@@ -623,7 +665,7 @@ class Command(BaseCommand):
                     MessageHandler(Filters.regex('^Создать игру$'), chose_game_name),
                 ],
                 GAME_NAME: [
-                    MessageHandler(Filters.regex('^.{7,20}$'), chose_game_price),
+                    MessageHandler(Filters.regex('^.{1,99}$'), chose_game_price),
                     MessageHandler(Filters.text, chose_game_name)
                 ],
                 GAME_PRICE: [
@@ -640,7 +682,7 @@ class Command(BaseCommand):
                     MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_reg_ends_back),
                     MessageHandler(Filters.regex(r'^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$'),
                                    game_confirmation),
-                    MessageHandler(Filters.text, chose_game_price_back)
+                    MessageHandler(Filters.text, chose_game_gift_date_back)
                 ],
                 GAME_CONFIRMATION: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_gift_date_back),
@@ -651,7 +693,8 @@ class Command(BaseCommand):
                 GUEST_COLLECT_NAME: [
                     MessageHandler(Filters.regex('^Ура! Сейчас я расскажу, что хочу получить на Новый Год!$'),
                                    collect_guest_name),
-                    MessageHandler(Filters.regex('^Подтвердить$'), collect_guest_wish)
+                    MessageHandler(Filters.regex('^Подтвердить$'), collect_guest_wish),
+                    MessageHandler(Filters.regex(r'[а-яА-Я]{2,40}$'), collect_guest_wish)
                 ],
                 GUEST_COLLECT_WISH: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_name_back),
@@ -659,7 +702,9 @@ class Command(BaseCommand):
                 ],
                 GUEST_COLLECT_MAIL: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_wish_back),
-                    MessageHandler(Filters.text, collect_guest_letter)
+                    MessageHandler(Filters.regex(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'),
+                                   collect_guest_letter),
+                    MessageHandler(Filters.text, collect_guest_mail),
                 ],
                 GUEST_COLLECT_LETTER: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), collect_guest_mail_back),
@@ -672,12 +717,13 @@ class Command(BaseCommand):
 
                 # registered branch
                 REGISTERED_GAME_VIEW: [
-                    MessageHandler(Filters.regex('^Информация об игре (в разработке)$'), registered_participants),
+                    MessageHandler(Filters.regex('^Информация об игре$'), registered_game_display),
                     MessageHandler(Filters.regex('^Просмотреть виш-листы других участников$'), registered_participants),
-                    MessageHandler(Filters.regex('^Хочу поменять информацию о себе$'), correct_guest_data)
+                    MessageHandler(Filters.regex('^Хочу поменять информацию о себе$'), correct_guest_data),
+                    MessageHandler(Filters.regex('^Назад ⬅$'), registered_game_display)
                 ],
                 REGISTERED_CORRECT_DATA: [
-                    MessageHandler(Filters.regex('^Назад ⬅$'), start_santa_game),
+                    MessageHandler(Filters.regex('^Назад ⬅$'), registered_game_display),
                     MessageHandler(Filters.regex('^Исправить имя$'), correct_name),
                     MessageHandler(Filters.regex('^Исправить желание$'), correct_wishlist),
                     MessageHandler(Filters.regex('^Исправить e-mail$'), correct_email),
@@ -693,7 +739,8 @@ class Command(BaseCommand):
                 ],
                 REGISTERED_CORRECT_EMAIL_ACCEPT: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), correct_guest_data),
-                    MessageHandler(Filters.text, rewrite_email)
+                    MessageHandler(Filters.regex(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'), rewrite_email),
+                    MessageHandler(Filters.text, correct_email)
                 ],
                 REGISTERED_CORRECT_LETTER_ACCEPT: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), correct_guest_data),
