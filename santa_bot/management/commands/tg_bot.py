@@ -61,6 +61,16 @@ def chose_game_name(update, context):
 def chose_game_price(update, context):
     if update.message.text != 'Назад ⬅':
         context.user_data['game_name'] = update.message.text
+        try:
+            game = Game.objects.all().values().get(name__exact=context.user_data['game_name'])
+        except Exception:
+            game = None
+        if game:
+            game_name = context.user_data['game_name']
+            update.message.reply_text(
+                f'Похоже название "{game_name}" уже занято. Попробуйте ввести другое'
+            )
+            return chose_game_name(update, context)
 
     game_name = context.user_data['game_name']
     text = f"Для игры {game_name} будет ограничение по стоимости?"
