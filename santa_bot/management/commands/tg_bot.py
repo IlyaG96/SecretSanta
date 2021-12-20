@@ -1,5 +1,7 @@
 # @SecretSanta_bot
 import telegram
+import re
+from datetime import datetime
 from environs import Env
 from hashlib import sha1
 
@@ -124,7 +126,8 @@ def chose_game_reg_ends_back(update, context):
 
 
 def chose_game_gift_date(update, context):
-    if update.message.text != 'Назад ⬅':
+    if update.message.text != 'Назад ⬅' and\
+            re.match("\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])*", update.message.text):
         context.user_data['registration_date'] = update.message.text
 
     keyboard = [['Назад ⬅']]
@@ -601,38 +604,29 @@ def send_messages(raffle_pairs):
 def perform_raffle():
     games = Game.objects.all()
     for game in games:
-        print(game.name)
         registration_date = game.registration_date.strftime("%Y-%m-%d")
-        actual_date = '2021-12-31'
-        # actual_date = datetime.now().strftime("%Y-%m-%d")
+        actual_date = datetime.now().strftime("%Y-%m-%d")
         if registration_date == actual_date:
-            print('hi')
             all_participant = list(game.participants.keys())
             participant_quantity = len(all_participant)
             if participant_quantity != 1:
                 remains = participant_quantity % 2
                 if remains == 0:
-                    print('1')
                     half_of_participant_quantity = participant_quantity // 2
                     first_half_of_participants = all_participant[:half_of_participant_quantity]
                     second_half_of_participants = all_participant[half_of_participant_quantity:]
                     raffle_pairs = dict(zip(first_half_of_participants, second_half_of_participants))
-                    print(raffle_pairs)
                     send_messages(raffle_pairs)
                 else:
-                    print('2')
                     half_of_participant_quantity = participant_quantity // 2
                     first_half_of_participants = all_participant[:half_of_participant_quantity]
                     second_half_of_participants = all_participant[half_of_participant_quantity:]
                     raffle_pairs = dict(zip(first_half_of_participants, second_half_of_participants))
                     raffle_pairs[all_participant[-1]] = all_participant[0]
-                    print(raffle_pairs)
                     test = send_messages(raffle_pairs)
-                    print(test)
             else:
                 raffle_pairs = 'Одиночество - изнанка свободы.'
                 send_messages(raffle_pairs)
-                print(raffle_pairs)
 
 
 class Command(BaseCommand):
@@ -653,7 +647,7 @@ class Command(BaseCommand):
                     MessageHandler(Filters.regex('^Создать игру$'), chose_game_name),
                 ],
                 GAME_NAME: [
-                    MessageHandler(Filters.regex('^.{7,20}$'), chose_game_price),
+                    MessageHandler(Filters.regex('^.{1,99}$'), chose_game_price),
                     MessageHandler(Filters.text, chose_game_name)
                 ],
                 GAME_PRICE: [
@@ -670,7 +664,7 @@ class Command(BaseCommand):
                     MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_reg_ends_back),
                     MessageHandler(Filters.regex(r'^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$'),
                                    game_confirmation),
-                    MessageHandler(Filters.text, chose_game_price_back)
+                    MessageHandler(Filters.text, chose_game_gift_date_back)
                 ],
                 GAME_CONFIRMATION: [
                     MessageHandler(Filters.regex('^Назад ⬅$'), chose_game_gift_date_back),
