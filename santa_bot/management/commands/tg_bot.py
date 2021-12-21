@@ -1,4 +1,5 @@
 # @SecretSanta_bot
+import asyncio
 import telegram
 import re
 from datetime import datetime
@@ -606,7 +607,6 @@ def send_messages(all_participant):
             else:
                 first_participant = Profile.objects.get(external_id=all_participant[index])
                 second_participant = Profile.objects.get(external_id=all_participant[index - 1])
-                print(all_participant[index], all_participant[index - 1])
                 bot.send_message(chat_id=all_participant[index],
                                  text='Жеребьевка в игре “Тайный Санта” проведена! \n'
                                       'Спешу сообщить, кто тебе выпал: \n'
@@ -634,13 +634,13 @@ def perform_raffle():
         #actual_date = datetime.now().strftime("%Y-%m-%d")
         if registration_date == actual_date:
             all_participant = list(game.participants.keys())
-            print(all_participant)
             send_messages(all_participant)
 
 
 
 class Command(BaseCommand):
     help = 'Телеграм-бот'
+    ruffle = perform_raffle()
 
     def handle(self, *args, **options):
         updater = Updater(telegram_token)
