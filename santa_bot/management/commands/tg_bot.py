@@ -594,40 +594,13 @@ def rewrite_letter(update, context):
 def send_messages(all_participant):
     bot = telegram.Bot(token=telegram_token)
     if len(all_participant) == 1:
-        raffle_pairs = [123124]  # just for tests
-        bot.send_message(chat_id=raffle_pairs[0],
+        bot.send_message(chat_id=all_participant[0],
                          text='Вы одни участвуете в игре. Купите себе самый лучший подарок')
-    elif len(all_participant) % 2 != 0:
-        for index, chat_id in enumerate(all_participant):
-            last_participant = all_participant[-1]
-            last_index = all_participant.index(last_participant)
-            if index == last_index:
-                pass
-            else:
-                first_participant = Profile.objects.get(external_id=all_participant[index])
-                second_participant = Profile.objects.get(external_id=all_participant[index - 1])
-                bot.send_message(chat_id=all_participant[index],
-                                 text='Жеребьевка в игре “Тайный Санта” проведена! \n'
-                                      'Спешу сообщить, кто тебе выпал: \n'
-                                      f'Имя: {second_participant.name} \n'
-                                      f'Почта: {second_participant.email} \n'
-                                      f'Интересы: {second_participant.wishlist} \n'
-                                      f'Письмо Санте: {second_participant.message_for_Santa} \n'
-                                 )
-
-                bot.send_message(chat_id=all_participant[index - 1],
-                                 text='Жеребьевка в игре “Тайный Санта” проведена! \n'
-                                      'Спешу сообщить, кто тебе выпал: \n'
-                                      f'Имя: {first_participant.name} \n'
-                                      f'Почта: {first_participant.email} \n'
-                                      f'Интересы: {first_participant.wishlist} \n'
-                                      f'Письмо Санте: {first_participant.message_for_Santa} \n'
-                                 )
     else:
-        half_of_participants = len(all_participant)//2
-        first_half = all_participant[: half_of_participants]
-        second_half = all_participant[half_of_participants :]
-        raffle_pairs = dict(zip(first_half, second_half))
+        raffle_pairs = {}
+        for index, num in enumerate(all_participant):
+            raffle_pairs.update({all_participant[index]: all_participant[index-1]})
+
         for participant1, participant2 in raffle_pairs.items():
             first_participant = Profile.objects.get(external_id=participant1)
             second_participant = Profile.objects.get(external_id=participant2)
@@ -638,14 +611,6 @@ def send_messages(all_participant):
                                   f'Почта:{second_participant.email} \n'
                                   f'Интересы: {second_participant.wishlist} \n'
                                   f'Письмо Санте: {second_participant.message_for_Santa} \n'
-                             )
-            bot.send_message(chat_id=participant2,
-                             text='Жеребьевка в игре “Тайный Санта” проведена! \n'
-                                  'Спешу сообщить кто тебе выпал: \n'
-                                  f'Имя: {first_participant.name} \n'
-                                  f'Почта:{first_participant.email} \n'
-                                  f'Интересы: {first_participant.wishlist} \n'
-                                  f'Письмо Санте: {first_participant.message_for_Santa} \n'
                              )
 
 
