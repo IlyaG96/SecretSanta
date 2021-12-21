@@ -661,6 +661,7 @@ def send_messages(all_participant):
                              )
 
 
+
 def perform_raffle():
     games = Game.objects.all()
     for game in games:
