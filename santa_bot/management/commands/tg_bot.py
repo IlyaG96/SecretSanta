@@ -1,5 +1,4 @@
 # @SecretSanta_bot
-import asyncio
 import telegram
 import re
 from datetime import datetime
