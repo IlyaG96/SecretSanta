@@ -626,7 +626,6 @@ def perform_raffle():
 
 class Command(BaseCommand):
     help = 'Телеграм-бот'
-    ruffle = perform_raffle()
 
     def handle(self, *args, **options):
         updater = Updater(telegram_token)
