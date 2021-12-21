@@ -606,6 +606,7 @@ def rewrite_letter(update, context):
 def send_messages(all_participant):
     bot = telegram.Bot(token=telegram_token)
     if len(all_participant) == 1:
+        raffle_pairs = [123124]  # just for tests
         bot.send_message(chat_id=raffle_pairs[0],
                          text='Вы одни участвуете в игре. Купите себе самый лучший подарок')
     else:
