@@ -606,7 +606,7 @@ def rewrite_letter(update, context):
 def send_messages(all_participant):
     bot = telegram.Bot(token=telegram_token)
     if len(all_participant) == 1:
-        bot.send_message(chat_id=raffle_pairs[0],
+        bot.send_message(chat_id=all_participant[0],
                          text='Вы одни участвуете в игре. Купите себе самый лучший подарок')
     elif len(all_participant) % 2 != 0:
         for index, chat_id in enumerate(all_participant):
@@ -675,6 +675,7 @@ def perform_raffle():
 
 class Command(BaseCommand):
     help = 'Телеграм-бот'
+    raffle = perform_raffle()
 
     def handle(self, *args, **options):
         updater = Updater(telegram_token)
