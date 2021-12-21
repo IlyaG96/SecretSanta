@@ -4,7 +4,6 @@ import re
 from datetime import datetime
 from environs import Env
 from hashlib import sha1
-
 from django.core.management.base import BaseCommand
 from santa_bot.models import Profile, Game
 from telegram.utils import helpers
@@ -63,10 +62,7 @@ def chose_game_name(update, context):
 def chose_game_price(update, context):
     if update.message.text != 'Назад ⬅':
         context.user_data['game_name'] = update.message.text
-        try:
-            game = Game.objects.all().values().get(name__exact=context.user_data['game_name'])
-        except Exception:
-            game = None
+        game = Game.objects.filter(name__exact=context.user_data['game_name']).first()
         if game:
             game_name = context.user_data['game_name']
             update.message.reply_text(
@@ -378,20 +374,12 @@ def add_guest_to_database(update, context):
     chat_id = context.user_data['chat_id']
     game = Game.objects.get(game_hash=context.user_data['game_hash'])
 
-
     name = context.user_data['first_name']
     wish = context.user_data['wish']
     mail = context.user_data['mail']
     letter = context.user_data['letter']
-    try:
-        profile = Profile.objects.get(external_id=chat_id)
-        external_id = profile.external_id
-    except Exception:
-
-        external_id = None
-
-    if not chat_id == external_id:
-
+    profile = Profile.objects.filter(external_id=chat_id).first()
+    if not profile:
         participant, _ = Profile.objects.get_or_create(
             external_id=chat_id,
             name=name,
@@ -606,7 +594,8 @@ def rewrite_letter(update, context):
 def send_messages(all_participant):
     bot = telegram.Bot(token=telegram_token)
     if len(all_participant) == 1:
-        bot.send_message(chat_id=all_participant[0],
+        raffle_pairs = [123124]  # just for tests
+        bot.send_message(chat_id=raffle_pairs[0],
                          text='Вы одни участвуете в игре. Купите себе самый лучший подарок')
     elif len(all_participant) % 2 != 0:
         for index, chat_id in enumerate(all_participant):
@@ -617,21 +606,20 @@ def send_messages(all_participant):
             else:
                 first_participant = Profile.objects.get(external_id=all_participant[index])
                 second_participant = Profile.objects.get(external_id=all_participant[index - 1])
-                print(all_participant[index], all_participant[index - 1])
                 bot.send_message(chat_id=all_participant[index],
                                  text='Жеребьевка в игре “Тайный Санта” проведена! \n'
-                                      'Спешу сообщить кто тебе выпал: \n'
+                                      'Спешу сообщить, кто тебе выпал: \n'
                                       f'Имя: {second_participant.name} \n'
-                                      f'Почта:{second_participant.email} \n'
+                                      f'Почта: {second_participant.email} \n'
                                       f'Интересы: {second_participant.wishlist} \n'
                                       f'Письмо Санте: {second_participant.message_for_Santa} \n'
                                  )
 
                 bot.send_message(chat_id=all_participant[index - 1],
                                  text='Жеребьевка в игре “Тайный Санта” проведена! \n'
-                                      'Спешу сообщить кто тебе выпал: \n'
+                                      'Спешу сообщить, кто тебе выпал: \n'
                                       f'Имя: {first_participant.name} \n'
-                                      f'Почта:{first_participant.email} \n'
+                                      f'Почта: {first_participant.email} \n'
                                       f'Интересы: {first_participant.wishlist} \n'
                                       f'Письмо Санте: {first_participant.message_for_Santa} \n'
                                  )
@@ -661,22 +649,20 @@ def send_messages(all_participant):
                              )
 
 
-
 def perform_raffle():
     games = Game.objects.all()
     for game in games:
         registration_date = game.registration_date.strftime("%Y-%m-%d")
-        actual_date = '2021-12-31'
+        actual_date = '2021-12-25'
         #actual_date = datetime.now().strftime("%Y-%m-%d")
         if registration_date == actual_date:
             all_participant = list(game.participants.keys())
-            print(all_participant)
             send_messages(all_participant)
 
 
 class Command(BaseCommand):
     help = 'Телеграм-бот'
-    raffle = perform_raffle()
+    ruffle = perform_raffle()
 
     def handle(self, *args, **options):
         updater = Updater(telegram_token)
