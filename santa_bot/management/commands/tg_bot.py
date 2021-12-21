@@ -608,7 +608,7 @@ def send_messages(all_participant):
     if len(all_participant) == 1:
         bot.send_message(chat_id=raffle_pairs[0],
                          text='Вы одни участвуете в игре. Купите себе самый лучший подарок')
-    else:
+    elif len(all_participant) % 2 != 0:
         for index, chat_id in enumerate(all_participant):
             last_participant = all_participant[-1]
             last_index = all_participant.index(last_participant)
@@ -635,6 +635,30 @@ def send_messages(all_participant):
                                       f'Интересы: {first_participant.wishlist} \n'
                                       f'Письмо Санте: {first_participant.message_for_Santa} \n'
                                  )
+    else:
+        half_of_participants = len(all_participant)//2
+        first_half = all_participant[: half_of_participants]
+        second_half = all_participant[half_of_participants :]
+        raffle_pairs = dict(zip(first_half, second_half))
+        for participant1, participant2 in raffle_pairs.items():
+            first_participant = Profile.objects.get(external_id=participant1)
+            second_participant = Profile.objects.get(external_id=participant2)
+            bot.send_message(chat_id=participant1,
+                             text='Жеребьевка в игре “Тайный Санта” проведена! \n'
+                                  'Спешу сообщить кто тебе выпал: \n'
+                                  f'Имя: {second_participant.name} \n'
+                                  f'Почта:{second_participant.email} \n'
+                                  f'Интересы: {second_participant.wishlist} \n'
+                                  f'Письмо Санте: {second_participant.message_for_Santa} \n'
+                             )
+            bot.send_message(chat_id=participant2,
+                             text='Жеребьевка в игре “Тайный Санта” проведена! \n'
+                                  'Спешу сообщить кто тебе выпал: \n'
+                                  f'Имя: {first_participant.name} \n'
+                                  f'Почта:{first_participant.email} \n'
+                                  f'Интересы: {first_participant.wishlist} \n'
+                                  f'Письмо Санте: {first_participant.message_for_Santa} \n'
+                             )
 
 
 def perform_raffle():
@@ -647,7 +671,6 @@ def perform_raffle():
             all_participant = list(game.participants.keys())
             print(all_participant)
             send_messages(all_participant)
-
 
 
 class Command(BaseCommand):
