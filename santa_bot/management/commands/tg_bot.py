@@ -618,8 +618,7 @@ def perform_raffle():
     games = Game.objects.all()
     for game in games:
         registration_date = game.registration_date.strftime("%Y-%m-%d")
-        actual_date = '2021-12-25'
-        #actual_date = datetime.now().strftime("%Y-%m-%d")
+        actual_date = datetime.now().strftime("%Y-%m-%d")
         if registration_date == actual_date:
             all_participant = list(game.participants.keys())
             send_messages(all_participant)
