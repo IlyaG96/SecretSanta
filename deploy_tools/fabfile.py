@@ -8,11 +8,13 @@ def deploy():
     site_folder = f'/home/django/code/SecretSanta'
     run(f'mkdir -p {site_folder}')
     with cd(site_folder):
+        _echo_git_pull()
         _get_latest_source()
         _update_virtualenv()
         _update_database()
         _daemon_reload()
         _get_latest_source()
+        _echo_git_pull()
 
 
 def _get_latest_source():
@@ -30,7 +32,7 @@ def _update_virtualenv():
     run('./env/bin/pip install -r requirements.txt')
 
 
-def echo_git_pull():
+def _echo_git_pull():
     msg = run('echo | git pull')
     print(msg)
 
