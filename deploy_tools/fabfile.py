@@ -10,7 +10,6 @@ def deploy():
     with cd(site_folder):
         _get_latest_source()
         _update_virtualenv()
-#      _update_static_files()
         _update_database()
         _daemon_reload()
         _get_latest_source()
@@ -29,6 +28,11 @@ def _update_virtualenv():
     if not exists('env/bin/pip'):
         run(f'python3 -m venv env')
     run('./env/bin/pip install -r requirements.txt')
+
+
+def echo_git_pull():
+    msg = run('echo | git pull')
+    print(msg)
 
 
 def _update_static_files():
