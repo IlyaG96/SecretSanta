@@ -13,6 +13,7 @@ def deploy():
         _update_virtualenv()
 #      _update_static_files()
         _update_database()
+        _daemon_reload()
 
 
 def _get_latest_source():
