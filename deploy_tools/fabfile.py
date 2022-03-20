@@ -1,13 +1,7 @@
-from environs import Env
 from fabric.contrib.files import exists
 from fabric.api import cd, local, run, env, hosts, sudo
 
-env.password = env.password
-print(env.get('host'))
-print(env.password)
-print(1/0)
 REPO_URL = 'git@github.com:IlyaG96/SecretSanta.git'
-
 
 @hosts(['137.184.45.165'])
 def deploy():
