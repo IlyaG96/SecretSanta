@@ -14,6 +14,7 @@ def deploy():
 #      _update_static_files()
         _update_database()
         _daemon_reload()
+        _get_latest_source()
 
 
 def _get_latest_source():
