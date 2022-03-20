@@ -11,7 +11,6 @@ def deploy():
         _echo_git_pull()
         _get_latest_source()
         _update_virtualenv()
-        _update_database()
         _daemon_reload()
         _get_latest_source()
         _echo_git_pull()
@@ -34,15 +33,13 @@ def _update_virtualenv():
 
 def _echo_git_pull():
     msg = run('echo | git pull')
-    print(msg)
+    if 'Already up to date.' in msg:
+        run('./env/bin/python manage.py migrate --noinput')
 
 
 def _update_static_files():
     run('./env/bin/python manage.py collectstatic --noinput')
 
-
-def _update_database():
-    run('./env/bin/python manage.py migrate --noinput')
 
 
 def _daemon_reload():
