@@ -10,7 +10,7 @@ def deploy():
     with cd(site_folder):
         _get_latest_source()
         _update_virtualenv()
-        _update_static_files()
+#      _update_static_files()
         _update_database()
 
 
@@ -35,6 +35,10 @@ def _update_static_files():
 
 def _update_database():
     run('./env/bin/python manage.py migrate --noinput')
+
+
+def _daemon_reload():
+    run('sudo systemctl daemon-reload')
 
 
 
