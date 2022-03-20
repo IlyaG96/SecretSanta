@@ -3,5 +3,6 @@ python-dotenv==0.19.0
 Django==3.2.7
 environs==9.3.3
 jsonfield==3.1.0
+Fabric3==1.14.post1
 
 
