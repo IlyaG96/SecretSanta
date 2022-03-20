@@ -41,7 +41,7 @@ def _update_database():
 
 
 def _daemon_reload():
-    sudo('systemctl daemon-reload')
+    sudo('systemctl daemon-reload', shell=False)
 
 
 
