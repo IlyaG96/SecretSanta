@@ -1,5 +1,5 @@
 from fabric.contrib.files import exists
-from fabric.api import cd, local, run, env, hosts
+from fabric.api import cd, local, run, env, hosts, sudo
 
 REPO_URL = 'git@github.com:IlyaG96/SecretSanta.git'
 
@@ -41,7 +41,7 @@ def _update_database():
 
 
 def _daemon_reload():
-    run('sudo systemctl daemon-reload')
+    sudo('systemctl daemon-reload')
 
 
 
