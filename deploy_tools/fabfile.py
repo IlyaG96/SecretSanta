@@ -4,7 +4,7 @@ from fabric.api import cd, local, run, env, hosts
 REPO_URL = 'git@github.com:IlyaG96/SecretSanta.git'
 
 
-@hosts([env.get('host')])
+@hosts(['137.184.45.165'])
 def deploy():
     site_folder = f'/home/django/code/SecretSanta'
     run(f'mkdir -p {site_folder}')
